@@ -32,27 +32,67 @@
     </jobTemplate>
     <jobTemplate id="iw_coh_main_cal">
       <streamingExecutable>/application/iw_coh_main_cal/run</streamingExecutable>
-      <defaultParameters></defaultParameters>
+      <defaultParameters>
+          <parameter id="orbittype" title="Orbit type" abstract="Define the orbit source for the Orbit Correction. NOTE: Precise orbit is available after 20 days of the data acquisition time." scope="runtime" maxOccurs="1">
+                <options>
+                        <option>Sentinel Precise (Auto Download)</option>
+                        <option>Sentinel Restituted (Auto Download)</option>
+                        <default>Sentinel Precise (Auto Download)</default>
+                </options>
+         </parameter>
+         <parameter id="cohWinAz" title="Azimuth coherence window size" abstract="Define the coherence estimation azimuth window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">10</parameter>
+         <parameter id="cohWinRg" title="Range coherence window size" abstract="Define the coherence estimation range window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">40</parameter>
+         <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">
+		<options>
+                        <option>SRTM 3Sec</option>
+                        <option>GETASSE30</option>
+			<!-- <option>SRTM 1Sec HGT</option>
+                        <option>ACE30</option>
+                        <option>ACE2_5Min</option> -->
+			<default>SRTM 3Sec</default>
+                </options>
+         </parameter>
+</defaultParameters>
       <defaultJobconf>
         <property id="mapred.task.timeout">9900000000</property>
       </defaultJobconf>
     </jobTemplate>
-    <jobTemplate id="mosaic_outputs_post_cal">
-      <streamingExecutable>/application/mosaic_outputs_post_cal/run</streamingExecutable>
-      <defaultParameters></defaultParameters>
+    <jobTemplate id="topsar-merge">
+      <streamingExecutable>/application/topsar-merge/run</streamingExecutable>
+      <defaultParameters>
+         <parameter id="nAzLooks" title="Azimuth Multilook factor" abstract="Define the multilook factor applied for Azimuth direction in the Multilooking processing [integer]" scope="runtime" maxOccurs="1">2</parameter>
+         <parameter id="nRgLooks" title="Range Multilook factor" abstract="Define the multilook factor applied for Range direction in the Multilooking processing [integer]" scope="runtime" maxOccurs="1">8</parameter>
+         <parameter id="pixelSpacingInMeter" title="Pixel spacing in meters" abstract="Define the pixel spacing for the Terrain-Correction processing [meters]" scope="runtime" maxOccurs="1">30.0</parameter>
+         <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">
+                <options>
+                        <option>SRTM 3Sec</option>
+                        <option>GETASSE30</option>
+                        <!-- <option>SRTM 1Sec HGT</option>
+                        <option>ACE30</option>
+                        <option>ACE2_5Min</option> -->
+                        <default>SRTM 3Sec</default>
+                </options>
+         </parameter>
+         <parameter id="mapProjection" title="Map projection" abstract="Define the Map Projection for the Terrain Correction processing" scope="test" maxOccurs="1">
+                <options>
+                        <option>WGS84(DD)</option>
+                        <option>UTM / WGS84 (Automatic)</option>
+                        <default>WGS84(DD)</default>
+                </options>
+         </parameter>
+        </defaultParameters>
       <defaultJobconf>
         <property id="ciop.job.max.tasks">1</property>
         <property id="mapred.task.timeout">9900000000</property>
       </defaultJobconf>
     </jobTemplate>
   </jobTemplates>
-  <workflow id="ewf-satcen-03-01-01" title="CDC – Change Detection and Characterization for Sentinel-1" abstract="This service provides  coherence products generated from a pair/pairs of Sentinel-1 TOPSAR IW data inputs. SNAP is a common architecture for all Sentinel Toolboxes, which is ideal for Earth Observation processing and analysis.">
+  <workflow id="ewf-satcen-03-01-01" title="CDC – Change Detection and Characterization for Sentinel-1" abstract="This service provides coherence products generated from a pair/pairs of Sentinel-1 TOPSAR IW data inputs. SNAP is a common architecture for all Sentinel Toolboxes, which is ideal for Earth Observation processing and analysis.">
     <workflowVersion>1.0</workflowVersion>
     <node id="node_sub_swathing_inputs">
       <job id="sub_swathing_inputs" />
       <sources>
-        <source id="master" title="Master product reference or references" abstract="Define the master product reference-s to be processed with SNAP" scope="runtime" refid="string:list" ></source>
-        <source id="slave" title="Slave product reference or references" abstract="Define the slave product reference-s to be processed with SNAP" scope="runtime" refid="string:list" ></source>  
+        <source id="source" title="Sentinel-1 SLC product references" abstract="Define Sentinel-1 SLC product references to be processed with SNAP" scope="runtime" refid="string:list"></source> 
       </sources>
       <parameters/>
     </node>
@@ -63,8 +103,8 @@
       </sources>
       <parameters/>
     </node>
-    <node id="node_mosaic_outputs_post_cal">
-      <job id="mosaic_outputs_post_cal" />
+    <node id="node_topsar-merge">
+      <job id="topsar-merge" />
       <sources>
         <source refid="wf:node">node_iw_coh_main_cal</source>
       </sources>
