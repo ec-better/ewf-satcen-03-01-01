@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application id="s1_slc_iw_cdc">
+  <jobTemplates>
+    <jobTemplate id="sub_swathing_inputs">
+      <streamingExecutable>/application/sub_swathing_inputs/run</streamingExecutable>
+      <defaultParameters>
+         <parameter id="subswath" title="Product subswath" abstract="Define the subswath of the product to be processed with SNAP" scope="test" maxOccurs="1">
+	         <options>
+        	         <option>IW1</option>
+                         <option>IW2</option>
+                         <option>IW3</option>
+                         <option>IW1,IW2</option>
+                         <option>IW2,IW3</option>
+                         <option>IW1,IW2,IW3</option>
+                         <default>IW1,IW2,IW3</default>
+                 </options>
+         </parameter>
+	 <parameter id="polarisation" title="Product polarisation" abstract="Define the product polarisation" scope="runtime" maxOccurs="1">
+	 	<options>
+			<option>VV</option>
+			<option>VH</option>
+			<option>HH</option>
+			<option>HV</option>
+			<default>VV</default>
+		</options>
+	 </parameter>
+      </defaultParameters>
+      <defaultJobconf>      	
+        <property id="ciop.job.max.tasks">1</property>
+        <property id="mapred.task.timeout">9900000000</property>
+      </defaultJobconf>
+    </jobTemplate>
+    <jobTemplate id="iw_coh_main_cal">
+      <streamingExecutable>/application/iw_coh_main_cal/run</streamingExecutable>
+      <defaultParameters></defaultParameters>
+      <defaultJobconf>
+        <property id="mapred.task.timeout">9900000000</property>
+      </defaultJobconf>
+    </jobTemplate>
+    <jobTemplate id="mosaic_outputs_post_cal">
+      <streamingExecutable>/application/mosaic_outputs_post_cal/run</streamingExecutable>
+      <defaultParameters></defaultParameters>
+      <defaultJobconf>
+        <property id="ciop.job.max.tasks">1</property>
+        <property id="mapred.task.timeout">9900000000</property>
+      </defaultJobconf>
+    </jobTemplate>
+  </jobTemplates>
+  <workflow id="s1_slc_iw_cdc" title="CDC – Change Detection and Characterization for Sentinel-1" abstract="This service provides  coherence products generated from a pair/pairs of Sentinel-1 TOPSAR IW data inputs. SNAP is a common architecture for all Sentinel Toolboxes, which is ideal for Earth Observation processing and analysis.">
+    <workflowVersion>1.0</workflowVersion>
+    <node id="node_sub_swathing_inputs">
+      <job id="sub_swathing_inputs" />
+      <sources>
+        <source id="master" title="Master product reference or references" abstract="Define the master product reference-s to be processed with SNAP" scope="runtime" refid="string:list" maxOccurs="1"></source>
+        <source id="slave" title="Slave product reference or references" abstract="Define the slave product reference-s to be processed with SNAP" scope="runtime" refid="string:list" maxOccurs="1"></source>  
+      </sources>
+      <parameters/>
+    </node>
+    <node id="node_iw_coh_main_cal">
+      <job id="iw_coh_main_cal" />
+      <sources>
+        <source refid="wf:node">node_sub_swathing_inputs</source>
+      </sources>
+      <parameters/>
+    </node>
+    <node id="node_mosaic_outputs_post_cal">
+      <job id="mosaic_outputs_post_cal" />
+      <sources>
+        <source refid="wf:node">node_iw_coh_main_cal</source>
+      </sources>
+      <parameters/>
+    </node>
+  </workflow>
+</application>
