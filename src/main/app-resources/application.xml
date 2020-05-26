@@ -35,22 +35,22 @@
       <defaultParameters>
           <parameter id="orbittype" title="Orbit type" abstract="Define the orbit source for the Orbit Correction. NOTE: Precise orbit is available after 20 days of the data acquisition time." scope="runtime" maxOccurs="1">
                 <options>
-                        <option>Sentinel Precise (Auto Download)</option>
-                        <option>Sentinel Restituted (Auto Download)</option>
-                        <default>Sentinel Precise (Auto Download)</default>
+                    <option>Sentinel Precise (Auto Download)</option>
+                    <option>Sentinel Restituted (Auto Download)</option>
+                    <default>Sentinel Precise (Auto Download)</default>
                 </options>
          </parameter>
          <parameter id="cohWinAz" title="Azimuth coherence window size" abstract="Define the coherence estimation azimuth window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">10</parameter>
          <parameter id="cohWinRg" title="Range coherence window size" abstract="Define the coherence estimation range window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">40</parameter>
          <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">
-		<options>
-                        <option>SRTM 3Sec</option>
-                        <option>GETASSE30</option>
-			<!-- <option>SRTM 1Sec HGT</option>
-                        <option>ACE30</option>
-                        <option>ACE2_5Min</option> -->
-			<default>SRTM 3Sec</default>
-                </options>
+            <options>
+                <option>SRTM 3Sec</option>
+                <option>GETASSE30</option>
+                <option>SRTM 1Sec HGT</option>
+                <option>ACE30</option>
+                <option>ACE2_5Min</option>
+                <default>SRTM 1Sec HGT</default>
+            </options>
          </parameter>
 </defaultParameters>
       <defaultJobconf>
@@ -67,10 +67,10 @@
                 <options>
                         <option>SRTM 3Sec</option>
                         <option>GETASSE30</option>
-                        <!-- <option>SRTM 1Sec HGT</option>
+                        <option>SRTM 1Sec HGT</option>
                         <option>ACE30</option>
-                        <option>ACE2_5Min</option> -->
-                        <default>SRTM 3Sec</default>
+                        <option>ACE2_5Min</option>
+                        <default>SRTM 1Sec HGT</default>
                 </options>
          </parameter>
          <parameter id="mapProjection" title="Map projection" abstract="Define the Map Projection for the Terrain Correction processing" scope="test" maxOccurs="1">
