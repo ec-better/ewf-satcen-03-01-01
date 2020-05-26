@@ -46,13 +46,13 @@
       </defaultJobconf>
     </jobTemplate>
   </jobTemplates>
-  <workflow id="s1_slc_iw_cdc" title="CDC – Change Detection and Characterization for Sentinel-1" abstract="This service provides  coherence products generated from a pair/pairs of Sentinel-1 TOPSAR IW data inputs. SNAP is a common architecture for all Sentinel Toolboxes, which is ideal for Earth Observation processing and analysis.">
+  <workflow id="ewf-satcen-03-01-01" title="CDC – Change Detection and Characterization for Sentinel-1" abstract="This service provides  coherence products generated from a pair/pairs of Sentinel-1 TOPSAR IW data inputs. SNAP is a common architecture for all Sentinel Toolboxes, which is ideal for Earth Observation processing and analysis.">
     <workflowVersion>1.0</workflowVersion>
     <node id="node_sub_swathing_inputs">
       <job id="sub_swathing_inputs" />
       <sources>
-        <source id="master" title="Master product reference or references" abstract="Define the master product reference-s to be processed with SNAP" scope="runtime" refid="string:list" maxOccurs="1"></source>
-        <source id="slave" title="Slave product reference or references" abstract="Define the slave product reference-s to be processed with SNAP" scope="runtime" refid="string:list" maxOccurs="1"></source>  
+        <source id="master" title="Master product reference or references" abstract="Define the master product reference-s to be processed with SNAP" scope="runtime" refid="string:list" ></source>
+        <source id="slave" title="Slave product reference or references" abstract="Define the slave product reference-s to be processed with SNAP" scope="runtime" refid="string:list" ></source>  
       </sources>
       <parameters/>
     </node>
