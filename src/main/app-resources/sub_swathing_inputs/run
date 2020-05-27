@@ -2,6 +2,12 @@
 
 import os
 import sys
+sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
+sys.path.append('../util')
+
+from snap import *
+from util import *
+
 import string
 import atexit
 
@@ -23,8 +29,11 @@ def clean_exit(exit_code):
     msg = {SUCCESS: 'Processing successfully concluded',
            ERR_RESOLUTION: 'Could not resolve Sentinel-1 product enclosure',
            ERR_STAGEIN: 'Could not stage-in Sentinel-1 product', 
-           ERR_NO_OUTPUT: "Missing output"
-    }
+           ERR_OVERLAP: 'At least one of the products does not overlap against the selected AOI or the two products do not overlap themselves',
+           ERR_PRODUCT_TYPE: 'At least one of the products is not a SLC image',
+           ERR_TRACK: 'Products do not have the same track',
+           ERR_POLARISATION: 'Products do not have the same polarisation',
+           ERR_NO_OUTPUT: "Missing output"}
  
     ciop.log(log_level, msg[exit_code])  
 
@@ -34,19 +43,75 @@ def main():
     
     os.chdir(ciop.tmp_dir)
     
-    aoi = ciop.getparam('aoi')
-   
-    for input in sys.stdin:
-        
-        output_name = os.path.join(ciop.tmp_dir, 
-                                   input.rstrip().split(',')[0])
+    #aoi = ciop.getparam('aoi')
 
-        ciop.log('INFO', 'Do something')
+    polarization = ciop.getparam('polarisation') 
+    sub_swaths = list(ciop.getparam('subswath').split(',')) 
+    references = []
         
-        # add processing steps
+    for input in sys.stdin:
+        ciop.log('INFO', 'Adding {}'.format(input.rstrip()))       
+        references.append(input.rstrip().split(',')[0])
+    
+    input_products = pd.DataFrame()
+
+    fields = 'identifier,self,enclosure,wkt,startdate,enddate,orbitDirection,productType,track,polarisationChannels'
+    search_result_params = []
+    for index, end_point in enumerate(references):
+        ciop.log('INFO', 'Getting metadata for {}'.format(end_point))      
+        temp_df = pd.DataFrame.from_dict(ciop.search(end_point=end_point,
+                                                     params=search_result_params,
+                                                     output_fields=fields, 
+                                                     model='EOP',
+                                                     timeout='60000'))
         
-        ciop.log('INFO', 'Publish something')
-        ciop.publish(output_name + '.tif', mode="silent")
+        input_products = input_products.append(temp_df, ignore_index=True)
+        
+    #Verify Validity of input products for processing:
+    group_analysis(input_products)
+    
+    if len(input_products.groupby('productType'))>1:
+        sys.exit(ERR_PRODUCT_TYPE)
+    
+    if len(input_products.groupby('Track'))>1:
+        sys.exit(ERR_TRACK)
+    
+    if len(input_products.groupby('polarisationChannels'))>1:
+        sys.exit(ERR_POLARISATION)
+    
+    #check to be applied for AOI overlap & products overlap
+    #....to be added
+    #....
+    #....
+    #Stage_IN:
+    for product in input_products.iterrows():
+        product.path = ciop.copy(product.enclosure,ciop.tmp_dir)
+        ciop.log("INFO", "Product local path: " + product.path)
+        product['local_path'] = "{0}/{1}.SAFE/manifest.safe".format(product.path,product.identifier)
+
+    if len(input_products[input_products['ordinal_type'] == 'Pre'].index)==1:
+        master_id = input_products[input_products['ordinal_type'] == 'Pre'].local_path
+    else: 
+        master_id = snap.slice_assembly(input_products[input_products['ordinal_type'] == 'Pst'].reset_index(drop=True))
+        
+        
+    if len(input_products[input_products['ordinal_type'] == 'Pst'].index)==1:
+        slave_id = input_products[input_products['ordinal_type'] == 'Pst'].local_path
+    else: 
+        slave_id = snap.slice_assembly(input_products[input_products['ordinal_type'] == 'Pre'].reset_index(drop=True))
+        
+        
+        
+    for k in subswaths: 
+        ciop.publish(list(slave_id,master_id,k),mode="silent" )
+
+
+                
+        
+    
+    
+    
+
 
 try:
     main()
