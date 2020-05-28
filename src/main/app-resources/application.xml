@@ -92,7 +92,7 @@
     <node id="node_sub_swathing_inputs">
       <job id="sub_swathing_inputs" />
       <sources>
-        <source id="source" title="Sentinel-1 SLC product references" abstract="Define Sentinel-1 SLC product references to be processed with SNAP" scope="runtime" refid="string:list"></source> 
+        <source id="source" title="Sentinel-1 SLC product references" abstract="Define Sentinel-1 SLC product references to be processed with SNAP" scope="runtime" refid="string:list">https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_GRDH_1SDV_20160115T045407_20160115T045432_009500_00DCA7_F9D5,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_GRDH_1SDV_20160115T045432_20160115T045457_009500_00DCA7_5B6E,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_GRDH_1SDV_20160713T045445_20160713T045508_012125_012C79_DD2B,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_GRDH_1SDV_20160713T045420_20160713T045445_012125_012C79_6F66</source> 
       </sources>
       <parameters/>
     </node>

@@ -88,41 +88,16 @@ def main():
     #....to be added
     #....
     #....
-    #Stage_IN:
-    for product in input_products.iterrows():
-        product.path = ciop.copy(product.enclosure,ciop.tmp_dir)
-        ciop.log("INFO", "Product local path: " + product.path)
-        product['local_path'] = "{0}/{1}.SAFE/manifest.safe".format(product.path,product.identifier)
-
-    if len(input_products[input_products['ordinal_type'] == 'Pre'].index)==1:
-        master_path = input_products[input_products['ordinal_type'] == 'Pre'].local_path
-    else: 
-        master_path = snap.slice_assembly(input_products[input_products['ordinal_type'] == 'Pst'].reset_index(drop=True))
-        
-        
-    if len(input_products[input_products['ordinal_type'] == 'Pst'].index)==1:
-        slave_path = input_products[input_products['ordinal_type'] == 'Pst'].local_path
-    else: 
-        slave_path = snap.slice_assembly(input_products[input_products['ordinal_type'] == 'Pre'].reset_index(drop=True))
-        
-        
-    master_identifier = '_'.join(input_products[input_products['ordinal_type'] == 'Pre'].identifier.values)
-    slave_identifier = '_'.join(input_products[input_products['ordinal_type'] == 'Pst'].identifier.values)
-
-    for k , pol in itertools.product(subswaths , polarizations): 
-
-        #TOPS Split products and write 
-        slave_name='{}_{}_slv_{}.tif'.format(k,pol,slave_identifier)
-        snap.split_subswath_write_product(slave_id,k,pol,os.path.join(ciop.tmp_dir,master_name))
-        
-        master_name='{}_{}_mstr_{}.tif'.format(k,pol,master_identifier)
-        snap.split_subswath_write_product(master_id,k,pol,os.path.join(ciop.tmp_dir,master_name))
+    
+    for k , pol in itertools.product(subswaths , polarizations):
+        series = dict()
+        series['master_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pst'].self.values)
+        series['slave_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pre'].self.values)
+        series['subswath'] = k
+        series['polarization'] = pol
         
         #publish master & slave files and echo to next node 
-        ciop.publish(list(slave_name,master_name),mode="silent" )
-
-
-   
+        ciop.publish(series, mode="silent")
 
 
 try:

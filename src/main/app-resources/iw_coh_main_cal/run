@@ -1,5 +1,8 @@
 #!/opt/anaconda/envs/env_ewf_satcen_03_01_01/bin/python
 
+# This node gets dict of master/slave/subswath/polarization and run-time params 
+# Stage-In
+# (optional sliceAssembly) and subSwath/polarizarion splitting then run the graph 
 import os
 import sys
 import string
@@ -34,16 +37,62 @@ def main():
     
     os.chdir(ciop.tmp_dir)
     
-    aoi = ciop.getparam('aoi')
+    #aoi = ciop.getparam('aoi')
    
     for input in sys.stdin:
-        
-        output_name = os.path.join(ciop.tmp_dir, 
-                                   input.rstrip().split(',')[0])
+        #Read dict 
+        input_series_dict = os.path.join(ciop.tmp_dir,input.rstrip())
+        ciop.log('INFO', 'Processing dict series for master:{}\n slave:{}\n subswath:{}\n pol:{}\n'.format(input_series_dict['master_ref'],
+                                                                                                       input_series_dict['slave_ref'],
+                                                                                                       input_series_dict['subswath'],
 
-        ciop.log('INFO', 'Do something')
-        
-        # add processing steps
+        master_refs = list(input_series_dict['master_ref'].split(','))
+        slave_refs = list(input_series_dict['slave_ref'].split(','))  
+                                                                                                           
+                                                                                                           
+        #Stage-IN:
+        fields = 'identifier,enclosure,startdate,wkt,enddate' 
+        search_result_params = []
+        #input_series_dict['master_enclosures']=''
+        #input_series_dict['master_local_path']=''  
+                                                                                                           
+        for mst_ref in master_refs:
+            ciop.log('INFO', 'Getting metadata for {}'.format(mst_ref))                                                                                               
+            temp_df = ciop.search(end_point=mst_ref,
+                                params=search_result_params,
+                                output_fields=fields, 
+                                model='EOP',
+                                timeout='60000')
+            
+            
+            input_series_dict['master_enclosures']+=str('{},'.format(temp_df[0]['enclosure']))                                  
+            #input_series_dict['master_startdate']  =                                 
+            #input_series_dict['master_enddate']  =                      
+            product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
+            ciop.log("INFO", "Product local path: " + product_path)                                                                                               
+            input_series_dict['master_local_path']+=str("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
+                                                                                                           
+                                                                                                           
+        for slv_ref in slave_refs:
+            ciop.log('INFO', 'Getting metadata for {}'.format(slv_ref))                                                                                               
+            temp_df = ciop.search(end_point=slv_ref,
+                                params=search_result_params,
+                                output_fields=fields, 
+                                model='EOP',
+                                timeout='60000')
+            
+            
+            input_series_dict['slave_enclosures']+=str('{},'.format(temp_df[0]['enclosure']))                                  
+            #input_series_dict['slave_startdate']  =                                 
+            #input_series_dict['slave_enddate']  =                      
+            product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
+            ciop.log("INFO", "Product local path: " + product_path)                                                                                               
+            input_series_dict['slave_local_path']+=str("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
+        ##Create Graph
+
+                                                                                                           
+
+       
         
         ciop.log('INFO', 'Publish something')
         ciop.publish(output_name + '.tif', mode='silent')
