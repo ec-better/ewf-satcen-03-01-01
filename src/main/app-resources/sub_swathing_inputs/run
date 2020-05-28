@@ -10,7 +10,7 @@ from util import *
 
 import string
 import atexit
-
+import itertools
 import cioppy 
 ciop = cioppy.Cioppy()
     
@@ -45,7 +45,7 @@ def main():
     
     #aoi = ciop.getparam('aoi')
 
-    polarization = ciop.getparam('polarisation') 
+    polarizations = list(ciop.getparam('polarisation').split(','))
     sub_swaths = list(ciop.getparam('subswath').split(',')) 
     references = []
         
@@ -90,27 +90,34 @@ def main():
         product['local_path'] = "{0}/{1}.SAFE/manifest.safe".format(product.path,product.identifier)
 
     if len(input_products[input_products['ordinal_type'] == 'Pre'].index)==1:
-        master_id = input_products[input_products['ordinal_type'] == 'Pre'].local_path
+        master_path = input_products[input_products['ordinal_type'] == 'Pre'].local_path
     else: 
-        master_id = snap.slice_assembly(input_products[input_products['ordinal_type'] == 'Pst'].reset_index(drop=True))
+        master_path = snap.slice_assembly(input_products[input_products['ordinal_type'] == 'Pst'].reset_index(drop=True))
         
         
     if len(input_products[input_products['ordinal_type'] == 'Pst'].index)==1:
-        slave_id = input_products[input_products['ordinal_type'] == 'Pst'].local_path
+        slave_path = input_products[input_products['ordinal_type'] == 'Pst'].local_path
     else: 
-        slave_id = snap.slice_assembly(input_products[input_products['ordinal_type'] == 'Pre'].reset_index(drop=True))
+        slave_path = snap.slice_assembly(input_products[input_products['ordinal_type'] == 'Pre'].reset_index(drop=True))
         
         
+    master_identifier = '_'.join(input_products[input_products['ordinal_type'] == 'Pre'].identifier.values)
+    slave_identifier = '_'.join(input_products[input_products['ordinal_type'] == 'Pst'].identifier.values)
+
+    for k , pol in itertools.product(subswaths , polarizations): 
+
+        #TOPS Split products and write 
+        slave_name='{}_{}_slv_{}.tif'.format(k,pol,slave_identifier)
+        snap.split_subswath_write_product(slave_id,k,pol,os.path.join(ciop.tmp_dir,master_name))
         
-    for k in subswaths: 
-        ciop.publish(list(slave_id,master_id,k),mode="silent" )
+        master_name='{}_{}_mstr_{}.tif'.format(k,pol,master_identifier)
+        snap.split_subswath_write_product(master_id,k,pol,os.path.join(ciop.tmp_dir,master_name))
+        
+        #publish master & slave files and echo to next node 
+        ciop.publish(list(slave_name,master_name),mode="silent" )
 
 
-                
-        
-    
-    
-    
+   
 
 
 try:
