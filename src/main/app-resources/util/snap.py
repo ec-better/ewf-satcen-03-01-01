@@ -13,7 +13,7 @@ def slice_assembly(input_prods):
     return mosaic
 
 
-def split_subswath_write(input_id, subswath, polarisation, output):
+def split_subswath_write_product(input_id, subswath, polarisation, output):
     snappy.GPF.getDefaultInstance().getOperatorSpiRegistry().loadOperatorSpis()
     HashMap = snappy.jpy.get_type('java.util.HashMap')
     parameters = HashMap()
