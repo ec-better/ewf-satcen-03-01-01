@@ -2,11 +2,18 @@
 
 # This node gets dict of master/slave/subswath/polarization and run-time params 
 # Stage-In
-# (optional sliceAssembly) and subSwath/polarizarion splitting then run the graph 
+# (optional sliceAssembly)=> subSwath/polarizarion splitting
+# generates a child graph which will be merged into parent graph in Back-Geocoding node
+
+
+
 import os
 import sys
 import string
 import atexit
+from py_snap_helpers import *
+from snappy import jpy
+from snappy import ProductIO
 
 import cioppy 
 ciop = cioppy.Cioppy()
@@ -38,13 +45,14 @@ def main():
     os.chdir(ciop.tmp_dir)
     
     #aoi = ciop.getparam('aoi')
-   
+    
     for input in sys.stdin:
         #Read dict 
         input_series_dict = os.path.join(ciop.tmp_dir,input.rstrip())
         ciop.log('INFO', 'Processing dict series for master:{}\n slave:{}\n subswath:{}\n pol:{}\n'.format(input_series_dict['master_ref'],
                                                                                                        input_series_dict['slave_ref'],
                                                                                                        input_series_dict['subswath'],
+                                                                                                        input_series_dict['polarization'])
 
         master_refs = list(input_series_dict['master_ref'].split(','))
         slave_refs = list(input_series_dict['slave_ref'].split(','))  
@@ -53,9 +61,12 @@ def main():
         #Stage-IN:
         fields = 'identifier,enclosure,startdate,wkt,enddate' 
         search_result_params = []
-        #input_series_dict['master_enclosures']=''
-        #input_series_dict['master_local_path']=''  
-                                                                                                           
+        input_series_dict['master_enclosures']=[]
+        input_series_dict['master_local_path']=[] 
+                 
+        start_date = []   
+        end_date = []
+
         for mst_ref in master_refs:
             ciop.log('INFO', 'Getting metadata for {}'.format(mst_ref))                                                                                               
             temp_df = ciop.search(end_point=mst_ref,
@@ -65,14 +76,23 @@ def main():
                                 timeout='60000')
             
             
-            input_series_dict['master_enclosures']+=str('{},'.format(temp_df[0]['enclosure']))                                  
-            #input_series_dict['master_startdate']  =                                 
-            #input_series_dict['master_enddate']  =                      
+            input_series_dict['master_enclosures'].append(temp_df[0]['enclosure'])                                 
+            start_date.append(temp_df[0]['startdate'])                                 
+            end_date.append(temp_df[0]['enddate'])   
+                 
             product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
             ciop.log("INFO", "Product local path: " + product_path)                                                                                               
-            input_series_dict['master_local_path']+=str("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
-                                                                                                           
-                                                                                                           
+            input_series_dict['master_local_path'].append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier']))
+        
+        input_series_dict['master_startdate']  =  min(start_date)                                                                                                 
+        input_series_dict['master_enddate']  =   max(end_date)   
+                 
+        start_date = []   
+        end_date = []
+                 
+        input_series_dict['slave_enclosures'] = []
+        input_series_dict['slave_local_path'] = []  
+                 
         for slv_ref in slave_refs:
             ciop.log('INFO', 'Getting metadata for {}'.format(slv_ref))                                                                                               
             temp_df = ciop.search(end_point=slv_ref,
@@ -81,22 +101,282 @@ def main():
                                 model='EOP',
                                 timeout='60000')
             
-            
-            input_series_dict['slave_enclosures']+=str('{},'.format(temp_df[0]['enclosure']))                                  
-            #input_series_dict['slave_startdate']  =                                 
-            #input_series_dict['slave_enddate']  =                      
+
+            input_series_dict['slave_enclosures'].append(temp_df[0]['enclosure'])   
+            start_date.append(temp_df[0]['startdate'])                                 
+            end_date.append(temp_df[0]['enddate']) 
+                     
             product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
             ciop.log("INFO", "Product local path: " + product_path)                                                                                               
-            input_series_dict['slave_local_path']+=str("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
-        ##Create Graph
-
-                                                                                                           
-
-       
+            input_series_dict['slave_local_path'].append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
+                 
+        input_series_dict['slave_startdate']  =  min(start_date)                                                                                                 
+        input_series_dict['slave_enddate']  =   max(end_date)  
+                 
+        ##Create Graphs for master/s and slave/s group-pre-processing
         
-        ciop.log('INFO', 'Publish something')
-        ciop.publish(output_name + '.tif', mode='silent')
+        parent_graph=GraphProcessor()
+        master_read_nodes = []
+                 
+        child_graph=GraphProcessor()
+        slave_read_nodes = []
+                 
+        ####Read and Assemble Masters
+        for i in range(len(input_series_dict['master_local_path'])):
+        
+            
+            operator = 'Read'
+            parameters = get_operator_default_parameters(operator)
+            node_id = 'Read-M-{0}'.format(i)
+            source_node_id = ''
+            parameters['file'] = input_series_dict['master_local_path'][i]
+            parent_graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_node_id)
+            source_node_id_m = node_id
+            master_read_nodes.append(node_id)
 
+        if len(input_series_dict['master_local_path'])>1:
+        
+            source_nodes_id = master_read_nodes
+            operator = 'SliceAssembly'
+            node_id = 'SliceAssembly-M'
+            parameters = get_operator_default_parameters(operator)
+            #parameters['selectedPolarisations'] = polarization
+            parent_graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_nodes_id)
+            source_node_id_m = node_id
+
+        ####Read and Assemble Slaves
+        for i in range(len(input_series_dict['slave_local_path'])):
+        
+            
+            operator = 'Read'
+            parameters = get_operator_default_parameters(operator)
+            node_id = 'Read-S-{0}'.format(i)
+            source_node_id = ''
+            parameters['file'] = input_series_dict['slave_local_path'][i]
+            child_graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_node_id)
+            source_node_id_s = node_id
+            slave_read_nodes.append(node_id)
+
+        if len(input_series_dict['slave_local_path'])>1:
+        
+            source_nodes_id = slave_read_nodes
+            operator = 'SliceAssembly'
+            node_id = 'SliceAssembly-S'
+            parameters = get_operator_default_parameters(operator)
+            #parameters['selectedPolarisations'] = polarization
+            child_graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_nodes_id)
+            source_node_id_s = node_id                 
+
+                 
+                 
+        ####Subswath & Pol split 
+        
+        operator = 'TOPSAR-Split'
+        parameters = get_operator_default_parameters(operator)
+        parameters['selectedPolarisations'] = input_series_dict['polarization']
+        parameters['subswath'] = input_series_dict['subswath'] 
+        parameters['firstBurstIndex'] = 1 
+        parameters['lastBurstIndex'] = 9 
+        #parameters['wktAoi'] = aoi
+                 
+        node_id = 'TOPSAR-Split-M'         
+        parent_graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_nodes_id_m)
+        source_node_id_m = node_id
+                 
+        node_id = 'TOPSAR-Split-S'         
+        child_graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_nodes_id_s)
+        source_node_id_s = node_id         
+                 
+                 
+        ####                                                                                                   
+        operator = 'Apply-Orbit-File'
+        parameters = get_operator_default_parameters(operator)
+        
+        parameters['orbitType'] = 'Sentinel Precise (Auto Download)'
+        parameters['polyDegree'] = 3
+        parameters['continueOnFail'] = 'true' 
+                 
+        node_id = 'Apply-Orbit-File-M'
+        parent_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_m)
+        source_node_id_m = node_id
+                 
+        node_id = 'Apply-Orbit-File-S'
+        child_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_s)
+        source_node_id_s = node_id
+        ####
+        operator = 'Calibration'
+        parameters = get_operator_default_parameters(operator)
+        parameters['auxFile'] = 'Latest Auxiliary File'
+        parameters['outputImageInComplex'] = 'true'
+        parameters['outputImageScaleInDb'] = 'false'
+        parameters['createSigmaBand'] = 'true'  #Added by PP           
+        parameters['createGammaBand'] = 'false'
+        parameters['createBetaBand'] = 'false'
+        parameters['outputSigmaBand'] = 'true'
+        parameters['outputGammaBand'] =  'false'
+        parameters['outputBetaBand'] =  'false'
+        # parameters['selectedPolarisations'] = polarization  ###Already selected polarisation
+                 
+        node_id = 'Calibration-M'
+        parent_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_m)
+        source_node_id_m = node_id
+                 
+        node_id = 'Calibration-S'
+        child_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_s)
+        source_node_id_s = node_id
+        ####
+        operator = 'Back-Geocoding'
+        parameters = get_operator_default_parameters(operator)
+                 
+        parameters['demName'] = 'SRTM 1Sec HGT'
+        parameters['demResamplingMethod'] = 'BILINEAR_INTERPOLATION'
+        parameters['externalDEMNoDataValue'] = 0.0
+        parameters['resamplingType'] = 'BILINEAR_INTERPOLATION'            
+        parameters['maskOutAreaWithoutElevation'] = 'false'
+        parameters['outputRangeAzimuthOffset'] = 'false' 
+        parameters['outputDerampDemodPhase'] = 'false'
+        parameters['disableReramp'] = 'false'
+                 
+        node_id = 'Back-Geocoding-MS'
+        parent_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         [source_node_id_m,source_node_id_s])
+
+        source_node_id_ms = node_id
+                 
+        ####
+        operator = 'Enhanced-Spectral-Diversity'
+        parameters = get_operator_default_parameters(operator)
+                 
+        parameters['fineWinWidthStr'] = 512
+        parameters['fineWinHeightStr'] = 512
+        parameters['fineWinAccAzimuth'] = 16
+        parameters['fineWinAccRange'] = 16           
+        parameters['fineWinOversampling'] = 128
+        parameters['xCorrThreshold'] = 0.1 
+        parameters['cohThreshold'] = 0.15
+        parameters['numBlocksPerOverlap'] = 10
+        parameters['useSuppliedRangeShift'] = 'false'
+        parameters['overallRangeShift'] = 0.0 
+        parameters['useSuppliedAzimuthShift'] = 'false'
+        parameters['overallAzimuthShift'] = 0.0        
+                 
+        node_id = 'ESD'
+        parent_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_ms)
+
+        source_node_id_ms = node_id
+        ####
+        operator = 'TOPSAR-Deburst'
+        parameters = get_operator_default_parameters(operator)
+        node_id = 'TOPSAR-Deburst'
+        parent_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_ms)
+
+        source_node_id_ms = node_id
+        ####
+        operator = 'Coherence'
+        parameters = get_operator_default_parameters(operator)
+                 
+        parameters['cohWinAz'] = 2
+        parameters['cohWinRg'] = 10
+        parameters['subtractFlatEarthPhase'] = 'false'
+        parameters['srpPolynomialDegree'] = 5         
+        parameters['srpNumberPoints'] = 501
+        parameters['orbitDegree'] = 3 
+        parameters['squarePixel'] = 'true'
+        parameters['subtractTopographicPhase'] = 'false'
+        parameters['externalDEMNoDataValue'] = 0.0 
+        parameters['singleMaster'] = 'true'
+        #parameters['externalDEMFile'] = 
+        #parameters['demName'] =       
+                 
+        node_id = 'Coherence'
+        parent_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_ms)
+
+        source_node_id_ms = node_id
+        ####
+        operator = 'Write'
+        parameters = get_operator_default_parameters(operator)
+                 
+        parameters['formatName'] = 'BEAM-DIMAP'      
+                 
+        node_id = 'Write-coherence'
+        coh_output_name = 'S1_{}_{}_{}_{}_coh.dim'.format(input_series_dict['subswath'],
+                                                                    input_series_dict['polarization'],
+                                                                    input_series_dict['slave_startdate'],
+                                                                    input_series_dict['master_enddate'])
+        parameters['formatName'] = coh_output_name
+        parent_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         'Coherence')
+
+         
+               
+                 
+        node_id = 'Write-TOPSAR-Deburst'
+        deburst_output_name = 'S1_{}_{}_{}_{}_deburst.dim'.format(input_series_dict['subswath'],
+                                                                    input_series_dict['polarization'],
+                                                                    input_series_dict['slave_startdate'],
+                                                                    input_series_dict['master_enddate'])
+        parameters['formatName'] = deburst_output_name
+        parent_graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         'TOPSAR-Deburst')
+
+                                                                                                  
+                                                                                                           
+        ####RUN graphs                                                                                                   
+        child_graph.run()
+        parent_graph.run()
+                 
+        ####Publish Outputs 
+        ciop.log('INFO', 'Publish coherence output file: {}'.format(coh_output_name))
+        ciop.publish(coh_output_name, mode='silent')
+                 
+        ciop.log('INFO', 'Publish TOPSAR-Deburst output file: {}'.format(deburst_output_name))
+        ciop.publish(coh_output_name, mode='silent')
+        
 try:
     main()
 except SystemExit as e:
