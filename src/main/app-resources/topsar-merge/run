@@ -48,7 +48,7 @@ def main():
         
         ciop.log('INFO', 'Processing file {}'.format(input.rstrip()))
         ## Discriminate by name
-        if rstrip()[-7:-4] == 'coh' :
+        if input.rstrip()[-7:-4] == 'coh' :
             coh_input_splits.append(os.path.join(ciop.tmp_dir, 
                                    input.rstrip()))
         else:
