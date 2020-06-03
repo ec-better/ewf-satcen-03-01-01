@@ -2,7 +2,7 @@
 
 # This node gets input refrences and run-time params 
 # Controls if master/s and slave/s are valid
-# optional sliceAssembly and subSwath splitting then publishes splits according to requested polarisation 
+# Publishes dict-format data containing master/s & slave/s selves & subswath & polarisation params 
 
 
 import os

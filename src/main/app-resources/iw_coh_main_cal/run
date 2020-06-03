@@ -267,12 +267,16 @@ def main():
         parameters['outputDerampDemodPhase'] = 'false'
         parameters['disableReramp'] = 'false'
                  
+        #prodset = []
+        #prodset.append(source_node_id_m)
+        #prodset.append(source_node_id_s)
+        
         node_id = 'Back-Geocoding-MS'
         parent_graph.add_node(node_id,
                          operator,
                          parameters,
                          [source_node_id_m,source_node_id_s])
-
+                         #prodset)
         source_node_id_ms = node_id
                  
         ####
@@ -299,7 +303,7 @@ def main():
                          source_node_id_ms)
 
         source_node_id_ms = node_id
-        ####
+        ####Burst Merging 
         operator = 'TOPSAR-Deburst'
         parameters = get_operator_default_parameters(operator)
         node_id = 'TOPSAR-Deburst'
@@ -344,7 +348,7 @@ def main():
                                                                     input_series_dict['polarization'],
                                                                     input_series_dict['slave_startdate'],
                                                                     input_series_dict['master_enddate'])
-        parameters['formatName'] = coh_output_name
+        parameters['formatName'] = os.path.join(ciop.tmp_dir,coh_output_name)
         parent_graph.add_node(node_id,
                          operator,
                          parameters,
@@ -354,11 +358,11 @@ def main():
                
                  
         node_id = 'Write-TOPSAR-Deburst'
-        deburst_output_name = 'S1_{}_{}_{}_{}_deburst.dim'.format(input_series_dict['subswath'],
+        sigma0_output_name = 'S1_{}_{}_{}_{}_sigma0.dim'.format(input_series_dict['subswath'],
                                                                     input_series_dict['polarization'],
                                                                     input_series_dict['slave_startdate'],
                                                                     input_series_dict['master_enddate'])
-        parameters['formatName'] = deburst_output_name
+        parameters['formatName'] = os.path.join(ciop.tmp_dir, sigma0_output_name)
         parent_graph.add_node(node_id,
                          operator,
                          parameters,
@@ -371,11 +375,11 @@ def main():
         parent_graph.run()
                  
         ####Publish Outputs 
-        ciop.log('INFO', 'Publish coherence output file: {}'.format(coh_output_name))
+        ciop.log('INFO', 'Publish intermediate coherence output file: {}'.format(coh_output_name))
         ciop.publish(coh_output_name, mode='silent')
                  
-        ciop.log('INFO', 'Publish TOPSAR-Deburst output file: {}'.format(deburst_output_name))
-        ciop.publish(coh_output_name, mode='silent')
+        ciop.log('INFO', 'Publish intermediate sigma0 output file: {}'.format(sigma0_output_name))
+        ciop.publish(sigma0_output_name, mode='silent')
         
 try:
     main()
