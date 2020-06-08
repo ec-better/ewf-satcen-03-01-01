@@ -164,15 +164,9 @@ def main():
     parameters['externalDEMApplyEGM'] = 'true' 
     parameters['demResamplingMethod'] = 'BILINEAR_INTERPOLATION' 
     parameters['imgResamplingMethod'] = 'BILINEAR_INTERPOLATION'
-    parameters['pixelSpacingInMeter'] = 1.0
+    parameters['pixelSpacingInMeter'] = 10.0
     parameters['pixelSpacingInDegree'] = 0
-    parameters['mapProjection'] = '''GEOGCS[&quot;WGS84(DD)&quot;, 
-  DATUM[&quot;WGS84&quot;, 
-    SPHEROID[&quot;WGS84&quot;, 6378137.0, 298.257223563]], 
-  PRIMEM[&quot;Greenwich&quot;, 0.0], 
-  UNIT[&quot;degree&quot;, 0.017453292519943295], 
-  AXIS[&quot;Geodetic longitude&quot;, EAST], 
-  AXIS[&quot;Geodetic latitude&quot;, NORTH]]'''
+    parameters['mapProjection'] = 'EPSG:4326'
     parameters['alignToStandardGrid'] = 'false'
     parameters['standardGridOriginX'] = 0
     parameters['standardGridOriginY'] = 0

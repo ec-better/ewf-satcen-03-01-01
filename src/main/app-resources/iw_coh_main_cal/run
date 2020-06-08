@@ -267,16 +267,14 @@ def main():
         parameters['outputDerampDemodPhase'] = 'false'
         parameters['disableReramp'] = 'false'
                  
-        #prodset = []
-        #prodset.append(source_node_id_m)
-        #prodset.append(source_node_id_s)
+
         
         node_id = 'Back-Geocoding-MS'
         parent_graph.add_node(node_id,
                          operator,
                          parameters,
                          [source_node_id_m,source_node_id_s])
-                         #prodset)
+
         source_node_id_ms = node_id
                  
         ####

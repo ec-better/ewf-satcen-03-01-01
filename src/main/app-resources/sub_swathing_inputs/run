@@ -12,13 +12,13 @@ sys.path.append('../util')
 
 from snap import *
 from util import *
-
+import json
 import string
 import atexit
 import itertools
 import cioppy 
 ciop = cioppy.Cioppy()
-    
+import pandas as pd    
 # define the exit codes
 SUCCESS = 0
 ERR_RESOLUTION = 10
@@ -78,7 +78,7 @@ def main():
     if len(input_products.groupby('productType'))>1:
         sys.exit(ERR_PRODUCT_TYPE)
     
-    if len(input_products.groupby('Track'))>1:
+    if len(input_products.groupby('track'))>1:
         sys.exit(ERR_TRACK)
     
     if len(input_products.groupby('polarisationChannels'))>1:
@@ -89,7 +89,7 @@ def main():
     #....
     #....
     
-    for k , pol in itertools.product(subswaths , polarizations):
+    for k , pol in itertools.product(sub_swaths , polarizations):
         series = dict()
         series['master_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pst'].self.values)
         series['slave_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pre'].self.values)
@@ -97,7 +97,7 @@ def main():
         series['polarization'] = pol
         
         #publish master & slave files and echo to next node 
-        ciop.publish(series, mode="silent")
+        ciop.publish(json.dumps(series), mode="silent")
 
 
 try:

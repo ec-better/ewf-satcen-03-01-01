@@ -4,26 +4,9 @@
     <jobTemplate id="sub_swathing_inputs">
       <streamingExecutable>/application/sub_swathing_inputs/run</streamingExecutable>
       <defaultParameters>
-         <parameter id="subswath" title="Product subswath" abstract="Define the subswath of the product to be processed with SNAP" scope="test" maxOccurs="1">
-	         <options>
-        	         <option>IW1</option>
-                         <option>IW2</option>
-                         <option>IW3</option>
-                         <option>IW1,IW2</option>
-                         <option>IW2,IW3</option>
-                         <option>IW1,IW2,IW3</option>
-                         <default>IW1,IW2,IW3</default>
-                 </options>
-         </parameter>
-	 <parameter id="polarisation" title="Product polarisation" abstract="Define the product polarisation" scope="runtime" maxOccurs="1">
-	 	<options>
-			<option>VV</option>
-			<option>VH</option>
-			<option>HH</option>
-			<option>HV</option>
-			<default>VV</default>
-		</options>
-	 </parameter>
+         <parameter id="subswath" title="Product subswath" abstract="Define the subswath of the product to be processed with SNAP" scope="test" maxOccurs="1">IW1,IW2,IW3</parameter>
+
+	 <parameter id="polarisation" title="Product polarisation" abstract="Define the product polarisation" scope="runtime" maxOccurs="1">VV</parameter>
       </defaultParameters>
       <defaultJobconf>      	
         <property id="ciop.job.max.tasks">1</property>
@@ -33,25 +16,10 @@
     <jobTemplate id="iw_coh_main_cal">
       <streamingExecutable>/application/iw_coh_main_cal/run</streamingExecutable>
       <defaultParameters>
-          <parameter id="orbittype" title="Orbit type" abstract="Define the orbit source for the Orbit Correction. NOTE: Precise orbit is available after 20 days of the data acquisition time." scope="runtime" maxOccurs="1">
-                <options>
-                    <option>Sentinel Precise (Auto Download)</option>
-                    <option>Sentinel Restituted (Auto Download)</option>
-                    <default>Sentinel Precise (Auto Download)</default>
-                </options>
-         </parameter>
+          <parameter id="orbittype" title="Orbit type" abstract="Define the orbit source for the Orbit Correction. NOTE: Precise orbit is available after 20 days of the data acquisition time." scope="runtime" maxOccurs="1">Sentinel Precise (Auto Download)</parameter>
          <parameter id="cohWinAz" title="Azimuth coherence window size" abstract="Define the coherence estimation azimuth window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">10</parameter>
          <parameter id="cohWinRg" title="Range coherence window size" abstract="Define the coherence estimation range window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">40</parameter>
-         <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">
-            <options>
-                <option>SRTM 3Sec</option>
-                <option>GETASSE30</option>
-                <option>SRTM 1Sec HGT</option>
-                <option>ACE30</option>
-                <option>ACE2_5Min</option>
-                <default>SRTM 1Sec HGT</default>
-            </options>
-         </parameter>
+         <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">SRTM 1Sec HGT</parameter>
 </defaultParameters>
       <defaultJobconf>
         <property id="mapred.task.timeout">9900000000</property>
@@ -63,23 +31,8 @@
          <parameter id="nAzLooks" title="Azimuth Multilook factor" abstract="Define the multilook factor applied for Azimuth direction in the Multilooking processing [integer]" scope="runtime" maxOccurs="1">2</parameter>
          <parameter id="nRgLooks" title="Range Multilook factor" abstract="Define the multilook factor applied for Range direction in the Multilooking processing [integer]" scope="runtime" maxOccurs="1">8</parameter>
          <parameter id="pixelSpacingInMeter" title="Pixel spacing in meters" abstract="Define the pixel spacing for the Terrain-Correction processing [meters]" scope="runtime" maxOccurs="1">30.0</parameter>
-         <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">
-                <options>
-                        <option>SRTM 3Sec</option>
-                        <option>GETASSE30</option>
-                        <option>SRTM 1Sec HGT</option>
-                        <option>ACE30</option>
-                        <option>ACE2_5Min</option>
-                        <default>SRTM 1Sec HGT</default>
-                </options>
-         </parameter>
-         <parameter id="mapProjection" title="Map projection" abstract="Define the Map Projection for the Terrain Correction processing" scope="test" maxOccurs="1">
-                <options>
-                        <option>WGS84(DD)</option>
-                        <option>UTM / WGS84 (Automatic)</option>
-                        <default>WGS84(DD)</default>
-                </options>
-         </parameter>
+         <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">SRTM 1Sec HGT</parameter>
+         <parameter id="mapProjection" title="Map projection" abstract="Define the Map Projection for the Terrain Correction processing" scope="test" maxOccurs="1">WGS84(DD)</parameter>
         </defaultParameters>
       <defaultJobconf>
         <property id="ciop.job.max.tasks">1</property>
@@ -92,7 +45,7 @@
     <node id="node_sub_swathing_inputs">
       <job id="sub_swathing_inputs" />
       <sources>
-        <source id="source" title="Sentinel-1 SLC product references" abstract="Define Sentinel-1 SLC product references to be processed with SNAP" scope="runtime" refid="string:list">https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_GRDH_1SDV_20160115T045407_20160115T045432_009500_00DCA7_F9D5,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_GRDH_1SDV_20160115T045432_20160115T045457_009500_00DCA7_5B6E,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_GRDH_1SDV_20160713T045445_20160713T045508_012125_012C79_DD2B,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_GRDH_1SDV_20160713T045420_20160713T045445_012125_012C79_6F66</source> 
+        <source id="source" title="Sentinel-1 SLC product references" abstract="Define Sentinel-1 SLC product references to be processed with SNAP" scope="runtime" refid="string:list">https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191025T191615_20191025T191642_029619_035F6B_AB57,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191025T191551_20191025T191618_029619_035F6B_D5E1,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191106T191551_20191106T191618_029794_03659A_2E33,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191106T191615_20191106T191642_029794_03659A_571C</source> 
       </sources>
       <parameters/>
     </node>
