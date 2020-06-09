@@ -91,13 +91,13 @@ def main():
     
     for k , pol in itertools.product(sub_swaths , polarizations):
         series = dict()
-        series['master_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pst'].self.values)
-        series['slave_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pre'].self.values)
+        series['master_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pre'].self.values)
+        series['slave_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pst'].self.values)
         series['subswath'] = k
         series['polarization'] = pol
         
-        #publish master & slave files and echo to next node 
-        ciop.publish(json.dumps(series), mode="silent")
+        #publish master/slave/subswath/pol and echo to next node 
+        ciop.publish((json.dumps(series) + '\n'), mode="silent")
 
 
 try:

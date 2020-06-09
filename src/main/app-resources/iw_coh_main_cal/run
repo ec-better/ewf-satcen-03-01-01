@@ -3,7 +3,7 @@
 # This node gets dict of master/slave/subswath/polarization and run-time params 
 # Stage-In
 # (optional sliceAssembly)=> subSwath/polarizarion splitting
-# generates a child graph which will be merged into parent graph in Back-Geocoding node
+# generates a graph which writes a two-band sigma0 dim file and a single-band coherence dim file
 
 
 
@@ -14,10 +14,11 @@ import atexit
 from py_snap_helpers import *
 from snappy import jpy
 from snappy import ProductIO
-
+sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
+sys.path.append('../util')
 import cioppy 
 ciop = cioppy.Cioppy()
-    
+import json    
 # define the exit codes
 SUCCESS = 0
 ERR_RESOLUTION = 10
@@ -48,15 +49,19 @@ def main():
     
     for input in sys.stdin:
         #Read dict 
-        input_series_dict = os.path.join(ciop.tmp_dir,input.rstrip())
-        ciop.log('INFO', 'Processing dict series for master:{}\n slave:{}\n subswath:{}\n pol:{}\n'.format(input_series_dict['master_ref'],
-                                                                                                       input_series_dict['slave_ref'],
-                                                                                                       input_series_dict['subswath'],
-                                                                                                        input_series_dict['polarization'])
+        input_series_dict = json.loads(input.rstrip())
+        ciop.log('DEBUG', 'Got the input in json format. PP')
+        ciop.log('DEBUG', 'input : {}'.format(input_series_dict))
+        
+
 
         master_refs = list(input_series_dict['master_ref'].split(','))
         slave_refs = list(input_series_dict['slave_ref'].split(','))  
-                                                                                                           
+        
+        ciop.log('INFO', 'Processing dict series for master:{}\n slave:{}\n subswath:{}\n pol:{}\n'.format(input_series_dict['master_ref'],
+                                                                                                       input_series_dict['slave_ref'],
+                                                                                                       input_series_dict['subswath'],
+                                                                                                        input_series_dict['polarization'])                                                                                                   
                                                                                                            
         #Stage-IN:
         fields = 'identifier,enclosure,startdate,wkt,enddate' 
@@ -112,13 +117,14 @@ def main():
                  
         input_series_dict['slave_startdate']  =  min(start_date)                                                                                                 
         input_series_dict['slave_enddate']  =   max(end_date)  
+        
                  
         ##Create Graphs for master/s and slave/s group-pre-processing
         
-        parent_graph=GraphProcessor()
+        graph=GraphProcessor()
         master_read_nodes = []
                  
-        child_graph=GraphProcessor()
+        #child_graph=GraphProcessor()
         slave_read_nodes = []
                  
         ####Read and Assemble Masters
@@ -130,7 +136,7 @@ def main():
             node_id = 'Read-M-{0}'.format(i)
             source_node_id = ''
             parameters['file'] = input_series_dict['master_local_path'][i]
-            parent_graph.add_node(node_id,
+            graph.add_node(node_id,
                          operator, 
                          parameters,
                          source_node_id)
@@ -144,7 +150,7 @@ def main():
             node_id = 'SliceAssembly-M'
             parameters = get_operator_default_parameters(operator)
             #parameters['selectedPolarisations'] = polarization
-            parent_graph.add_node(node_id,
+            graph.add_node(node_id,
                          operator, 
                          parameters,
                          source_nodes_id)
@@ -159,7 +165,7 @@ def main():
             node_id = 'Read-S-{0}'.format(i)
             source_node_id = ''
             parameters['file'] = input_series_dict['slave_local_path'][i]
-            child_graph.add_node(node_id,
+            graph.add_node(node_id,
                          operator, 
                          parameters,
                          source_node_id)
@@ -173,7 +179,7 @@ def main():
             node_id = 'SliceAssembly-S'
             parameters = get_operator_default_parameters(operator)
             #parameters['selectedPolarisations'] = polarization
-            child_graph.add_node(node_id,
+            graph.add_node(node_id,
                          operator, 
                          parameters,
                          source_nodes_id)
@@ -192,14 +198,14 @@ def main():
         #parameters['wktAoi'] = aoi
                  
         node_id = 'TOPSAR-Split-M'         
-        parent_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator, 
                          parameters,
                          source_nodes_id_m)
         source_node_id_m = node_id
                  
         node_id = 'TOPSAR-Split-S'         
-        child_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator, 
                          parameters,
                          source_nodes_id_s)
@@ -215,14 +221,14 @@ def main():
         parameters['continueOnFail'] = 'true' 
                  
         node_id = 'Apply-Orbit-File-M'
-        parent_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          source_node_id_m)
         source_node_id_m = node_id
                  
         node_id = 'Apply-Orbit-File-S'
-        child_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          source_node_id_s)
@@ -242,14 +248,14 @@ def main():
         # parameters['selectedPolarisations'] = polarization  ###Already selected polarisation
                  
         node_id = 'Calibration-M'
-        parent_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          source_node_id_m)
         source_node_id_m = node_id
                  
         node_id = 'Calibration-S'
-        child_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          source_node_id_s)
@@ -295,7 +301,7 @@ def main():
         parameters['overallAzimuthShift'] = 0.0        
                  
         node_id = 'ESD'
-        parent_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          source_node_id_ms)
@@ -305,7 +311,7 @@ def main():
         operator = 'TOPSAR-Deburst'
         parameters = get_operator_default_parameters(operator)
         node_id = 'TOPSAR-Deburst'
-        parent_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          source_node_id_ms)
@@ -329,7 +335,7 @@ def main():
         #parameters['demName'] =       
                  
         node_id = 'Coherence'
-        parent_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          source_node_id_ms)
@@ -347,7 +353,7 @@ def main():
                                                                     input_series_dict['slave_startdate'],
                                                                     input_series_dict['master_enddate'])
         parameters['formatName'] = os.path.join(ciop.tmp_dir,coh_output_name)
-        parent_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          'Coherence')
@@ -361,23 +367,23 @@ def main():
                                                                     input_series_dict['slave_startdate'],
                                                                     input_series_dict['master_enddate'])
         parameters['formatName'] = os.path.join(ciop.tmp_dir, sigma0_output_name)
-        parent_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          'TOPSAR-Deburst')
 
-                                                                                                  
-                                                                                                           
+        ####                                                                                          
+        ciop.log('INFO', 'The complete graph in second node: {}'.format(graph.view_graph()))                                                                                                   
         ####RUN graphs                                                                                                   
-        child_graph.run()
-        parent_graph.run()
+        
+        #graph.run()
                  
         ####Publish Outputs 
         ciop.log('INFO', 'Publish intermediate coherence output file: {}'.format(coh_output_name))
-        ciop.publish(coh_output_name, mode='silent')
+        #ciop.publish(coh_output_name, mode='silent')
                  
         ciop.log('INFO', 'Publish intermediate sigma0 output file: {}'.format(sigma0_output_name))
-        ciop.publish(sigma0_output_name, mode='silent')
+        #ciop.publish(sigma0_output_name, mode='silent')
         
 try:
     main()
