@@ -4,7 +4,7 @@
     <jobTemplate id="sub_swathing_inputs">
       <streamingExecutable>/application/sub_swathing_inputs/run</streamingExecutable>
       <defaultParameters>
-         <parameter id="subswath" title="Product subswath" abstract="Define the subswath of the product to be processed with SNAP" scope="test" maxOccurs="1">IW1,IW2,IW3</parameter>
+         <parameter id="subswath" title="Product subswath" abstract="Define the subswath of the product to be processed with SNAP" scope="test" maxOccurs="1">IW1</parameter>
 
 	 <parameter id="polarisation" title="Product polarisation" abstract="Define the product polarisation" scope="runtime" maxOccurs="1">VV</parameter>
       </defaultParameters>
@@ -45,7 +45,7 @@
     <node id="node_sub_swathing_inputs">
       <job id="sub_swathing_inputs" />
       <sources>
-        <source id="source" title="Sentinel-1 SLC product references" abstract="Define Sentinel-1 SLC product references to be processed with SNAP" scope="runtime" refid="string:list">https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191025T191615_20191025T191642_029619_035F6B_AB57,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191025T191551_20191025T191618_029619_035F6B_D5E1,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191106T191551_20191106T191618_029794_03659A_2E33,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191106T191615_20191106T191642_029794_03659A_571C</source> 
+        <source id="source" title="Sentinel-1 SLC product references" abstract="Define Sentinel-1 SLC product references to be processed with SNAP" scope="runtime" refid="string:list">https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191025T191551_20191025T191618_029619_035F6B_D5E1,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191106T191551_20191106T191618_029794_03659A_2E33</source> 
       </sources>
       <parameters/>
     </node>

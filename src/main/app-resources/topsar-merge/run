@@ -5,11 +5,12 @@
 # post-processing  gdal calculations
 
 
+
 import os
 import sys
 import string
 import atexit
-
+import tarfile
 import cioppy 
 ciop = cioppy.Cioppy()
     
@@ -44,18 +45,18 @@ def main():
     sigma0_input_splits = []
     
     #### Read inputs consisting of two types dim files: coherence and sigma0
+    input_extract_dir = os.path.join(ciop.tmp_dir,'input_dir') 
     for input in sys.stdin:
-        
+        ciop.copy(input.rstrip(),input_extract_dir,extract=True)
         ciop.log('INFO', 'Processing file {}'.format(input.rstrip()))
-        ## Discriminate by name
-        if input.rstrip()[-7:-4] == 'coh' :
-            coh_input_splits.append(os.path.join(ciop.tmp_dir, 
-                                   input.rstrip()))
+        
+    ## Discriminate input files by name
+    for file in os.listdir(input_extract_dir):
+        if file[-7:-4] == 'coh' :
+            coh_input_splits.append(os.path.join(input_extract_dir,file))
         else:
-            sigma0_input_splits.append(os.path.join(ciop.tmp_dir, 
-                                   input.rstrip()))
-
-        ciop.copy(input.rstrip(),ciop.tmp_dir,extract=False)
+            sigma0_input_splits.append(os.path.join(input_extract_dir,file))
+        
 
         
     ciop.log('INFO', 'Total number of input coherence slices are: {}'.format(len(coh_input_splits)))

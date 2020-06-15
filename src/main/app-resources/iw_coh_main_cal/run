@@ -3,7 +3,7 @@
 # This node gets dict of master/slave/subswath/polarization and run-time params 
 # Stage-In
 # (optional sliceAssembly)=> subSwath/polarizarion splitting
-# generates a graph which writes a two-band sigma0 dim file and a single-band coherence dim file
+# generates a graph which writes a two-band sigma0 dim file and a single-band coherence dim file and publish them as a tar.zip file
 
 
 
@@ -11,6 +11,7 @@ import os
 import sys
 import string
 import atexit
+import tarfile
 from py_snap_helpers import *
 from snappy import jpy
 from snappy import ProductIO
@@ -50,24 +51,15 @@ def main():
     for input in sys.stdin:
         #Read dict 
         input_series_dict = json.loads(input.rstrip())
-        ciop.log('DEBUG', 'Got the input in json format. PP')
-        ciop.log('DEBUG', 'input : {}'.format(input_series_dict))
-        
-
+        ciop.log('DEBUG', 'Got the input JSON file.')
+        ciop.log('DEBUG', 'Converted input JSON file into dict: {}'.format(input_series_dict))
 
         master_refs = list(input_series_dict['master_ref'].split(','))
-        slave_refs = list(input_series_dict['slave_ref'].split(','))  
-        
-        ciop.log('INFO', 'Processing dict series for master:{}\n slave:{}\n subswath:{}\n pol:{}\n'.format(input_series_dict['master_ref'],
-                                                                                                       input_series_dict['slave_ref'],
-                                                                                                       input_series_dict['subswath'],
-                                                                                                        input_series_dict['polarization'])                                                                                                   
-                                                                                                           
+        slave_refs = list(input_series_dict['slave_ref'].split(','))                                                                   
         #Stage-IN:
-        fields = 'identifier,enclosure,startdate,wkt,enddate' 
-        search_result_params = []
-        input_series_dict['master_enclosures']=[]
-        input_series_dict['master_local_path']=[] 
+
+        master_enclosures = []
+        master_local_path = [] 
                  
         start_date = []   
         end_date = []
@@ -75,67 +67,65 @@ def main():
         for mst_ref in master_refs:
             ciop.log('INFO', 'Getting metadata for {}'.format(mst_ref))                                                                                               
             temp_df = ciop.search(end_point=mst_ref,
-                                params=search_result_params,
-                                output_fields=fields, 
+                                params=[],
+                                output_fields='identifier,enclosure,startdate,wkt,enddate', 
                                 model='EOP',
                                 timeout='60000')
             
             
-            input_series_dict['master_enclosures'].append(temp_df[0]['enclosure'])                                 
+            master_enclosures.append(temp_df[0]['enclosure'])                                 
             start_date.append(temp_df[0]['startdate'])                                 
             end_date.append(temp_df[0]['enddate'])   
                  
             product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
+            
             ciop.log("INFO", "Product local path: " + product_path)                                                                                               
-            input_series_dict['master_local_path'].append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier']))
+            master_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier']))
         
-        input_series_dict['master_startdate']  =  min(start_date)                                                                                                 
+        input_series_dict['master_startdate']  =  min(start_date)                                                                                               
         input_series_dict['master_enddate']  =   max(end_date)   
                  
         start_date = []   
         end_date = []
                  
-        input_series_dict['slave_enclosures'] = []
-        input_series_dict['slave_local_path'] = []  
+        slave_enclosures = []
+        slave_local_path = []  
                  
         for slv_ref in slave_refs:
             ciop.log('INFO', 'Getting metadata for {}'.format(slv_ref))                                                                                               
             temp_df = ciop.search(end_point=slv_ref,
-                                params=search_result_params,
-                                output_fields=fields, 
+                                params=[],
+                                output_fields='identifier,enclosure,startdate,wkt,enddate', 
                                 model='EOP',
                                 timeout='60000')
             
 
-            input_series_dict['slave_enclosures'].append(temp_df[0]['enclosure'])   
+            slave_enclosures.append(temp_df[0]['enclosure'])   
             start_date.append(temp_df[0]['startdate'])                                 
             end_date.append(temp_df[0]['enddate']) 
                      
             product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
+            
             ciop.log("INFO", "Product local path: " + product_path)                                                                                               
-            input_series_dict['slave_local_path'].append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
+            slave_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
                  
-        input_series_dict['slave_startdate']  =  min(start_date)                                                                                                 
+        input_series_dict['slave_startdate']  =  min(start_date)                                                                                                    
         input_series_dict['slave_enddate']  =   max(end_date)  
         
                  
-        ##Create Graphs for master/s and slave/s group-pre-processing
+        ##Create Graph for master/s and slave/s group-pre-processing
         
-        graph=GraphProcessor()
+        graph=GraphProcessor(ciop.tmp_dir)
         master_read_nodes = []
-                 
-        #child_graph=GraphProcessor()
         slave_read_nodes = []
                  
         ####Read and Assemble Masters
-        for i in range(len(input_series_dict['master_local_path'])):
-        
-            
+        for i in range(len(master_local_path)):
             operator = 'Read'
             parameters = get_operator_default_parameters(operator)
             node_id = 'Read-M-{0}'.format(i)
             source_node_id = ''
-            parameters['file'] = input_series_dict['master_local_path'][i]
+            parameters['file'] = master_local_path[i]
             graph.add_node(node_id,
                          operator, 
                          parameters,
@@ -143,7 +133,7 @@ def main():
             source_node_id_m = node_id
             master_read_nodes.append(node_id)
 
-        if len(input_series_dict['master_local_path'])>1:
+        if len(master_local_path)>1:
         
             source_nodes_id = master_read_nodes
             operator = 'SliceAssembly'
@@ -157,14 +147,14 @@ def main():
             source_node_id_m = node_id
 
         ####Read and Assemble Slaves
-        for i in range(len(input_series_dict['slave_local_path'])):
+        for i in range(len(slave_local_path)):
         
             
             operator = 'Read'
             parameters = get_operator_default_parameters(operator)
             node_id = 'Read-S-{0}'.format(i)
             source_node_id = ''
-            parameters['file'] = input_series_dict['slave_local_path'][i]
+            parameters['file'] = slave_local_path[i]
             graph.add_node(node_id,
                          operator, 
                          parameters,
@@ -172,7 +162,7 @@ def main():
             source_node_id_s = node_id
             slave_read_nodes.append(node_id)
 
-        if len(input_series_dict['slave_local_path'])>1:
+        if len(slave_local_path)>1:
         
             source_nodes_id = slave_read_nodes
             operator = 'SliceAssembly'
@@ -193,22 +183,22 @@ def main():
         parameters = get_operator_default_parameters(operator)
         parameters['selectedPolarisations'] = input_series_dict['polarization']
         parameters['subswath'] = input_series_dict['subswath'] 
-        parameters['firstBurstIndex'] = 1 
-        parameters['lastBurstIndex'] = 9 
+        parameters['firstBurstIndex'] = '1' 
+        parameters['lastBurstIndex'] = '9' 
         #parameters['wktAoi'] = aoi
                  
         node_id = 'TOPSAR-Split-M'         
         graph.add_node(node_id,
                          operator, 
                          parameters,
-                         source_nodes_id_m)
+                         source_node_id_m)
         source_node_id_m = node_id
                  
         node_id = 'TOPSAR-Split-S'         
         graph.add_node(node_id,
                          operator, 
                          parameters,
-                         source_nodes_id_s)
+                         source_node_id_s)
         source_node_id_s = node_id         
                  
                  
@@ -217,7 +207,7 @@ def main():
         parameters = get_operator_default_parameters(operator)
         
         parameters['orbitType'] = 'Sentinel Precise (Auto Download)'
-        parameters['polyDegree'] = 3
+        parameters['polyDegree'] = '3'
         parameters['continueOnFail'] = 'true' 
                  
         node_id = 'Apply-Orbit-File-M'
@@ -266,7 +256,7 @@ def main():
                  
         parameters['demName'] = 'SRTM 1Sec HGT'
         parameters['demResamplingMethod'] = 'BILINEAR_INTERPOLATION'
-        parameters['externalDEMNoDataValue'] = 0.0
+        parameters['externalDEMNoDataValue'] = '0.0'
         parameters['resamplingType'] = 'BILINEAR_INTERPOLATION'            
         parameters['maskOutAreaWithoutElevation'] = 'false'
         parameters['outputRangeAzimuthOffset'] = 'false' 
@@ -276,7 +266,7 @@ def main():
 
         
         node_id = 'Back-Geocoding-MS'
-        parent_graph.add_node(node_id,
+        graph.add_node(node_id,
                          operator,
                          parameters,
                          [source_node_id_m,source_node_id_s])
@@ -287,18 +277,18 @@ def main():
         operator = 'Enhanced-Spectral-Diversity'
         parameters = get_operator_default_parameters(operator)
                  
-        parameters['fineWinWidthStr'] = 512
-        parameters['fineWinHeightStr'] = 512
-        parameters['fineWinAccAzimuth'] = 16
-        parameters['fineWinAccRange'] = 16           
-        parameters['fineWinOversampling'] = 128
-        parameters['xCorrThreshold'] = 0.1 
-        parameters['cohThreshold'] = 0.15
-        parameters['numBlocksPerOverlap'] = 10
+        parameters['fineWinWidthStr'] = '512'
+        parameters['fineWinHeightStr'] = '512'
+        parameters['fineWinAccAzimuth'] = '16'
+        parameters['fineWinAccRange'] = '16'           
+        parameters['fineWinOversampling'] = '128'
+        parameters['xCorrThreshold'] = '0.1' 
+        parameters['cohThreshold'] = '0.15'
+        parameters['numBlocksPerOverlap'] = '10'
         parameters['useSuppliedRangeShift'] = 'false'
-        parameters['overallRangeShift'] = 0.0 
+        parameters['overallRangeShift'] = '0.0' 
         parameters['useSuppliedAzimuthShift'] = 'false'
-        parameters['overallAzimuthShift'] = 0.0        
+        parameters['overallAzimuthShift'] = '0.0'        
                  
         node_id = 'ESD'
         graph.add_node(node_id,
@@ -321,15 +311,15 @@ def main():
         operator = 'Coherence'
         parameters = get_operator_default_parameters(operator)
                  
-        parameters['cohWinAz'] = 2
-        parameters['cohWinRg'] = 10
+        parameters['cohWinAz'] = '2'
+        parameters['cohWinRg'] = '10'
         parameters['subtractFlatEarthPhase'] = 'false'
-        parameters['srpPolynomialDegree'] = 5         
-        parameters['srpNumberPoints'] = 501
-        parameters['orbitDegree'] = 3 
+        parameters['srpPolynomialDegree'] = '5'         
+        parameters['srpNumberPoints'] = '501'
+        parameters['orbitDegree'] = '3' 
         parameters['squarePixel'] = 'true'
         parameters['subtractTopographicPhase'] = 'false'
-        parameters['externalDEMNoDataValue'] = 0.0 
+        parameters['externalDEMNoDataValue'] = '0.0' 
         parameters['singleMaster'] = 'true'
         #parameters['externalDEMFile'] = 
         #parameters['demName'] =       
@@ -341,6 +331,11 @@ def main():
                          source_node_id_ms)
 
         source_node_id_ms = node_id
+        ####General output name
+        output_name = 'S1_{}_{}_{}_{}'.format(input_series_dict['subswath'],
+                                                                    input_series_dict['polarization'],
+                                                                    input_series_dict['master_startdate'],
+                                                                    input_series_dict['slave_enddate'])
         ####
         operator = 'Write'
         parameters = get_operator_default_parameters(operator)
@@ -348,11 +343,8 @@ def main():
         parameters['formatName'] = 'BEAM-DIMAP'      
                  
         node_id = 'Write-coherence'
-        coh_output_name = 'S1_{}_{}_{}_{}_coh.dim'.format(input_series_dict['subswath'],
-                                                                    input_series_dict['polarization'],
-                                                                    input_series_dict['slave_startdate'],
-                                                                    input_series_dict['master_enddate'])
-        parameters['formatName'] = os.path.join(ciop.tmp_dir,coh_output_name)
+        coh_output_name = '{}_coh.dim'.format(output_name)
+        parameters['formatName'] = coh_output_name
         graph.add_node(node_id,
                          operator,
                          parameters,
@@ -362,28 +354,32 @@ def main():
                
                  
         node_id = 'Write-TOPSAR-Deburst'
-        sigma0_output_name = 'S1_{}_{}_{}_{}_sigma0.dim'.format(input_series_dict['subswath'],
-                                                                    input_series_dict['polarization'],
-                                                                    input_series_dict['slave_startdate'],
-                                                                    input_series_dict['master_enddate'])
-        parameters['formatName'] = os.path.join(ciop.tmp_dir, sigma0_output_name)
+
+        sigma0_output_name = '{}_sigma0.dim'.format(output_name)
+        parameters['formatName'] =  sigma0_output_name
         graph.add_node(node_id,
                          operator,
                          parameters,
                          'TOPSAR-Deburst')
 
         ####                                                                                          
-        ciop.log('INFO', 'The complete graph in second node: {}'.format(graph.view_graph()))                                                                                                   
+        graph.save_graph('main_graph_{}.xml'.format(output_name))                                                                             
+        ciop.publish(os.path.join(ciop.tmp_dir,'main_graph_{}.xml'.format(output_name)), mode='anonymous')                      
         ####RUN graphs                                                                                                   
         
-        #graph.run()
+        graph.run()
                  
-        ####Publish Outputs 
-        ciop.log('INFO', 'Publish intermediate coherence output file: {}'.format(coh_output_name))
-        #ciop.publish(coh_output_name, mode='silent')
-                 
-        ciop.log('INFO', 'Publish intermediate sigma0 output file: {}'.format(sigma0_output_name))
-        #ciop.publish(sigma0_output_name, mode='silent')
+        ####Publish Outputs in zip format 
+
+        tar = tarfile.open("{}.tar.gz".format(output_name), "w:gz")
+        for name in [os.path.join(ciop.tmp_dir, coh_output_name), os.path.join(ciop.tmp_dir, sigma0_output_name)]:
+            tar.add(name)
+        tar.close()
+    
+    
+        ciop.log('INFO', 'Publish intermediate output file: {} in tar.gz format'.format(output_name))
+        ciop.publish(os.path.join(ciop.tmp_dir,"{}.tar.gz".format(output_name)), mode='silent')
+        
         
 try:
     main()
