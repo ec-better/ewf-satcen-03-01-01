@@ -12,11 +12,12 @@ import sys
 import string
 import atexit
 import tarfile
+sys.path.append('../util')
 from py_snap_helpers import *
 from snappy import jpy
 from snappy import ProductIO
 sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
-sys.path.append('../util')
+
 sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')
 import cioppy 
 ciop = cioppy.Cioppy()
@@ -381,7 +382,7 @@ def main():
     
     
         ciop.log('INFO', 'Publish intermediate output file: {} in tar.gz format'.format(output_name))
-        ciop.publish(os.path.join(ciop.tmp_dir,"{}.tar.gz".format(output_name)), mode='silent')
+        ciop.publish(os.path.join(ciop.tmp_dir,"{}.tar.gz".format(output_name)))
 
         
 try:

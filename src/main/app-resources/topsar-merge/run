@@ -13,11 +13,12 @@ import atexit
 import tarfile
 import cioppy 
 ciop = cioppy.Cioppy()
-from py_snap_helpers import *
+
 from snappy import jpy
 from snappy import ProductIO
 sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
 sys.path.append('../util')
+from py_snap_helpers import *
 sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')    
 # define the exit codes
 SUCCESS = 0
@@ -53,10 +54,16 @@ def main():
     input_extract_dir = os.path.join(ciop.tmp_dir,'input_dir')
     if not os.path.exists(input_extract_dir):
         os.makedirs(input_extract_dir)
-     
+ 
+
     for input in sys.stdin:
         ciop.log('INFO', 'Processing file {}'.format(input.rstrip()))
-        ciop.copy(input.rstrip().split('/')[-1],input_extract_dir,extract=True)
+        #Only zip data files extracted 
+        if input.rstrip().split('.')[-1] == 'gz':
+            ciop.copy(input.rstrip(),ciop.tmp_dir,extract=False)
+            ciop.log('DEBUG','zipped input {} is staged-in'.format(input.rstrip().split('/')[-1]))
+            with tarfile.open(os.path.join(ciop.tmp_dir,input.rstrip().split('/')[-1]), "r:gz") as input_tarfile:
+                input_tarfile.extractall(path=input_extract_dir)
         
         
         
@@ -64,15 +71,16 @@ def main():
     for file in os.listdir(input_extract_dir):
         if file[-7:-4] == 'coh' :
             coh_input_splits.append(os.path.join(input_extract_dir,file))
+            ciop.log('DEBUG', 'Processing file {}'.format(file))
         else:
             sigma0_input_splits.append(os.path.join(input_extract_dir,file))
             ciop.log('DEBUG', 'Processing file {}'.format(file))
 
         
-    ciop.log('INFO', 'Total number of input coherence slices are: {}'.format(len(coh_input_splits)))
+    ciop.log('INFO', 'Total number of input slices are: {}'.format(len(coh_input_splits)))
         
     #####Process Inputs
-    graph = GraphProcessor()
+    graph = GraphProcessor(ciop.tmp_dir)
     coh_read_nodes = []
     sigma0_read_nodes = []
     #### Process coherence input splits
@@ -137,23 +145,23 @@ def main():
     operator = 'Speckle-Filter'
     parameters = get_operator_default_parameters(operator)
     parameters['filter'] = 'Lee Sigma'
-    parameters['filterSizeX'] = 3
-    parameters['filterSizeY'] = 3 
-    parameters['dampingFactor'] = 2 
+    parameters['filterSizeX'] = '3'
+    parameters['filterSizeY'] = '3' 
+    parameters['dampingFactor'] = '2' 
     parameters['estimateENL'] = 'true'
-    parameters['enl'] = 1.0
-    parameters['numLooksStr'] = 1
+    parameters['enl'] = '1.0'
+    parameters['numLooksStr'] = '1'
     parameters['windowSize'] = '7x7'
     parameters['targetWindowSizeStr'] = '3x3'
-    parameters['sigmaStr'] = 0.9
-    parameters['anSize'] = 50
+    parameters['sigmaStr'] = '0.9'
+    parameters['anSize'] = '50'
         
-    node_id = 'Speckle-Filter_coh_inputs'         
+    node_id = 'Speckle-Filter_sigma0_inputs'         
     graph.add_node(node_id,
                          operator, 
                          parameters,
-                         source_node_id_coh)
-    source_node_id_coh = node_id
+                         source_node_id_sigma0)
+    source_node_id_sigma0 = node_id
     
     ####Band Merge
     operator = 'BandMerge'
@@ -171,16 +179,16 @@ def main():
     operator = 'Terrain-Correction'
     parameters = get_operator_default_parameters(operator)
     parameters['demName'] = 'SRTM 1Sec HGT'
-    parameters['externalDEMNoDataValue'] = 0.0
+    parameters['externalDEMNoDataValue'] = '0.0'
     parameters['externalDEMApplyEGM'] = 'true' 
     parameters['demResamplingMethod'] = 'BILINEAR_INTERPOLATION' 
     parameters['imgResamplingMethod'] = 'BILINEAR_INTERPOLATION'
-    parameters['pixelSpacingInMeter'] = 10.0
-    parameters['pixelSpacingInDegree'] = 0
+    parameters['pixelSpacingInMeter'] = '10.0'
+    parameters['pixelSpacingInDegree'] = '0'
     parameters['mapProjection'] = 'EPSG:4326'
     parameters['alignToStandardGrid'] = 'false'
-    parameters['standardGridOriginX'] = 0
-    parameters['standardGridOriginY'] = 0
+    parameters['standardGridOriginX'] = '0'
+    parameters['standardGridOriginY'] = '0'
     parameters['nodataValueAtSea'] = 'true'
     parameters['saveDEM'] = 'false'
     parameters['saveLatLon'] = 'false'
@@ -203,7 +211,11 @@ def main():
                          parameters,
                          source_node_id)
     source_node_id = node_id
-    ####
+    #### Create an output_dir to place the output
+#    local_output_dir = os.path.join(ciop.tmp_dir,'local_output_dir')
+#    if not os.path.exists(local_output_dir):
+#        os.makedirs(local_output_dir)
+    
     operator = 'Write'
     parameters = get_operator_default_parameters(operator)
     parameters['formatName'] = 'BEAM-DIMAP'
@@ -221,6 +233,7 @@ def main():
     graph.run() 
     
     ciop.log('INFO', 'SNAP Processing finished successfully.')
+    ciop.publish(os.path.join(ciop.tmp_dir, 'target.dim'))
     ####Gdal post-processing
     
     ##ACD RGB file, name: ACD_{master_date}_{slave_date}
