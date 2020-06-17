@@ -5,6 +5,8 @@ import time
 #import psutil
 import os
 import sys
+sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')
+
 import snappy 
 from snappy import GPF
 import logging
@@ -208,7 +210,8 @@ class GraphProcessor():
         
             self.save_graph(filename=path)
 
-            options = [self.gpt_path,
+            options = [#self.gpt_path,
+                '/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/bin/gpt',
                '-x',
                '-c',
                '2048M',

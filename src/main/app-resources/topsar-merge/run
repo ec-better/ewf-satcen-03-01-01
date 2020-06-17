@@ -13,7 +13,12 @@ import atexit
 import tarfile
 import cioppy 
 ciop = cioppy.Cioppy()
-    
+from py_snap_helpers import *
+from snappy import jpy
+from snappy import ProductIO
+sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
+sys.path.append('../util')
+sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')    
 # define the exit codes
 SUCCESS = 0
 ERR_RESOLUTION = 10
@@ -44,11 +49,16 @@ def main():
     coh_input_splits = []
     sigma0_input_splits = []
     
-    #### Read inputs consisting of two types dim files: coherence and sigma0
-    input_extract_dir = os.path.join(ciop.tmp_dir,'input_dir') 
+    #### Read all input zip files consisting of two types dim files: coherence and sigma0
+    input_extract_dir = os.path.join(ciop.tmp_dir,'input_dir')
+    if not os.path.exists(input_extract_dir):
+        os.makedirs(input_extract_dir)
+     
     for input in sys.stdin:
-        ciop.copy(input.rstrip(),input_extract_dir,extract=True)
         ciop.log('INFO', 'Processing file {}'.format(input.rstrip()))
+        ciop.copy(input.rstrip().split('/')[-1],input_extract_dir,extract=True)
+        
+        
         
     ## Discriminate input files by name
     for file in os.listdir(input_extract_dir):
@@ -56,7 +66,7 @@ def main():
             coh_input_splits.append(os.path.join(input_extract_dir,file))
         else:
             sigma0_input_splits.append(os.path.join(input_extract_dir,file))
-        
+            ciop.log('DEBUG', 'Processing file {}'.format(file))
 
         
     ciop.log('INFO', 'Total number of input coherence slices are: {}'.format(len(coh_input_splits)))

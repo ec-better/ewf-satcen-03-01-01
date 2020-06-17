@@ -17,6 +17,7 @@ from snappy import jpy
 from snappy import ProductIO
 sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
 sys.path.append('../util')
+sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')
 import cioppy 
 ciop = cioppy.Cioppy()
 import json    
@@ -126,6 +127,7 @@ def main():
             node_id = 'Read-M-{0}'.format(i)
             source_node_id = ''
             parameters['file'] = master_local_path[i]
+            parameters['formatName'] = 'SENTINEL-1'
             graph.add_node(node_id,
                          operator, 
                          parameters,
@@ -155,6 +157,7 @@ def main():
             node_id = 'Read-S-{0}'.format(i)
             source_node_id = ''
             parameters['file'] = slave_local_path[i]
+            parameters['formatName'] = 'SENTINEL-1'
             graph.add_node(node_id,
                          operator, 
                          parameters,
@@ -229,7 +232,7 @@ def main():
         parameters['auxFile'] = 'Latest Auxiliary File'
         parameters['outputImageInComplex'] = 'true'
         parameters['outputImageScaleInDb'] = 'false'
-        parameters['createSigmaBand'] = 'true'  #Added by PP           
+           
         parameters['createGammaBand'] = 'false'
         parameters['createBetaBand'] = 'false'
         parameters['outputSigmaBand'] = 'true'
@@ -334,8 +337,8 @@ def main():
         ####General output name
         output_name = 'S1_{}_{}_{}_{}'.format(input_series_dict['subswath'],
                                                                     input_series_dict['polarization'],
-                                                                    input_series_dict['master_startdate'],
-                                                                    input_series_dict['slave_enddate'])
+                                                                    input_series_dict['master_startdate'][:10],
+                                                                    input_series_dict['slave_enddate'][:10])
         ####
         operator = 'Write'
         parameters = get_operator_default_parameters(operator)
@@ -344,7 +347,7 @@ def main():
                  
         node_id = 'Write-coherence'
         coh_output_name = '{}_coh.dim'.format(output_name)
-        parameters['formatName'] = coh_output_name
+        parameters['file'] = coh_output_name
         graph.add_node(node_id,
                          operator,
                          parameters,
@@ -356,7 +359,7 @@ def main():
         node_id = 'Write-TOPSAR-Deburst'
 
         sigma0_output_name = '{}_sigma0.dim'.format(output_name)
-        parameters['formatName'] =  sigma0_output_name
+        parameters['file'] =  sigma0_output_name
         graph.add_node(node_id,
                          operator,
                          parameters,
@@ -372,14 +375,14 @@ def main():
         ####Publish Outputs in zip format 
 
         tar = tarfile.open("{}.tar.gz".format(output_name), "w:gz")
-        for name in [os.path.join(ciop.tmp_dir, coh_output_name), os.path.join(ciop.tmp_dir, sigma0_output_name)]:
+        for name in [sigma0_output_name,coh_output_name]:
             tar.add(name)
         tar.close()
     
     
         ciop.log('INFO', 'Publish intermediate output file: {} in tar.gz format'.format(output_name))
         ciop.publish(os.path.join(ciop.tmp_dir,"{}.tar.gz".format(output_name)), mode='silent')
-        
+
         
 try:
     main()
