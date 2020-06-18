@@ -210,8 +210,7 @@ class GraphProcessor():
         
             self.save_graph(filename=path)
 
-            options = [#self.gpt_path,
-                '/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/bin/gpt',
+            options = [self.gpt_path,
                '-x',
                '-c',
                '2048M',

@@ -117,7 +117,7 @@ def main():
                  
         ##Create Graph for master/s and slave/s group-pre-processing
         
-        graph=GraphProcessor(ciop.tmp_dir)
+        graph=GraphProcessor('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/bin/gpt')
         master_read_nodes = []
         slave_read_nodes = []
                  

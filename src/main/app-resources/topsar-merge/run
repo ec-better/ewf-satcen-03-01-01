@@ -80,7 +80,7 @@ def main():
     ciop.log('INFO', 'Total number of {} sub-swath & Polarisation input slices.'.format(len(coh_input_splits)))
         
     #####Process Inputs
-    graph = GraphProcessor(ciop.tmp_dir)
+    graph = GraphProcessor('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/bin/gpt')
     coh_read_nodes = []
     sigma0_read_nodes = []
     #### Process coherence input splits
