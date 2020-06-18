@@ -10,7 +10,7 @@ import sys
 sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
 sys.path.append('../util')
 
-from snap import *
+
 from util import *
 import json
 import string

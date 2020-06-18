@@ -67,17 +67,17 @@ def main():
         
         
         
-    ## Discriminate input files by name
+    ## Discriminate input files by name: Choose dim files to be inserted in SNAP graph
     for file in os.listdir(input_extract_dir):
-        if file[-7:-4] == 'coh' :
+        if file[-7:-4] == 'coh' and file.split('.')[-1]=='dim':
             coh_input_splits.append(os.path.join(input_extract_dir,file))
             ciop.log('DEBUG', 'Processing file {}'.format(file))
-        else:
+        elif file[-10:-4] == 'sigma0' and file.split('.')[-1]=='dim':
             sigma0_input_splits.append(os.path.join(input_extract_dir,file))
             ciop.log('DEBUG', 'Processing file {}'.format(file))
 
         
-    ciop.log('INFO', 'Total number of input slices are: {}'.format(len(coh_input_splits)))
+    ciop.log('INFO', 'Total number of {} sub-swath & Polarisation input slices.'.format(len(coh_input_splits)))
         
     #####Process Inputs
     graph = GraphProcessor(ciop.tmp_dir)
@@ -141,7 +141,7 @@ def main():
         source_node_id_sigma0 = node_id
             
             
-    ####Speckle filtering coherence merged inputs
+    ####Speckle filtering sigma0 merged inputs
     operator = 'Speckle-Filter'
     parameters = get_operator_default_parameters(operator)
     parameters['filter'] = 'Lee Sigma'
@@ -172,7 +172,7 @@ def main():
     graph.add_node(node_id,
                          operator, 
                          parameters,
-                         [source_node_id_sigma0,source_node_id_coh])  #control correct syntax
+                         [source_node_id_sigma0,source_node_id_coh])  
     source_node_id = node_id
     
     ####
@@ -219,7 +219,7 @@ def main():
     operator = 'Write'
     parameters = get_operator_default_parameters(operator)
     parameters['formatName'] = 'BEAM-DIMAP'
-    parameters['file'] = os.path.join(ciop.tmp_dir, 'target.dim')    ###Control correct syntax
+    parameters['file'] = os.path.join(ciop.tmp_dir, 'target.dim')    
     node_id = 'Write'         
     graph.add_node(node_id,
                          operator, 
@@ -233,20 +233,19 @@ def main():
     graph.run() 
     
     ciop.log('INFO', 'SNAP Processing finished successfully.')
-    ciop.publish(os.path.join(ciop.tmp_dir, 'target.dim'))
-    ####Gdal post-processing
+    
+    ####Publish Results
+    for suffix in ['dim' , 'data']:
+        ciop.publish(os.path.join(ciop.tmp_dir, 'target.{}'.format(suffix)))
+
+    ####Gdal post-processing to be added 
     
     ##ACD RGB file, name: ACD_{master_date}_{slave_date}
     
     
     ##COG - UInt16
     
-   
-    
-    
-    
-    
-    
+     
 
 
 try:

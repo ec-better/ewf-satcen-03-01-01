@@ -5,23 +5,23 @@
 # (optional sliceAssembly)=> subSwath/polarizarion splitting
 # generates a graph which writes a two-band sigma0 dim file and a single-band coherence dim file and publish them as a tar.zip file
 
-
-
 import os
 import sys
 import string
 import atexit
 import tarfile
-sys.path.append('../util')
-from py_snap_helpers import *
-from snappy import jpy
-from snappy import ProductIO
+import json 
 sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
 
-sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')
 import cioppy 
 ciop = cioppy.Cioppy()
-import json    
+ 
+sys.path.append('../util')
+from py_snap_helpers import *
+sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')
+from snappy import jpy
+from snappy import ProductIO
+
 # define the exit codes
 SUCCESS = 0
 ERR_RESOLUTION = 10
@@ -375,9 +375,10 @@ def main():
                  
         ####Publish Outputs in zip format 
 
+
         tar = tarfile.open("{}.tar.gz".format(output_name), "w:gz")
-        for name in [sigma0_output_name,coh_output_name]:
-            tar.add(name)
+        for file_name in [sigma0_output_name,coh_output_name,'{}.data'.format(sigma0_output_name.split('.')[0]),'{}.data'.format(coh_output_name.split('.')[0]) ]:
+            tar.add(file_name)
         tar.close()
     
     
