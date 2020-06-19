@@ -1,13 +1,25 @@
 #!/opt/anaconda/envs/env_ewf_satcen_03_01_01/bin/python
 
+# This node reads dim files coherence and sigma0 for sub-swaths & polarisation/s 
+# Merge subswaths together & speckle filters, then merge sigma0 bands and coherence 
+# post-processing  gdal calculations
+
+
+
 import os
 import sys
 import string
 import atexit
-
+import tarfile
 import cioppy 
 ciop = cioppy.Cioppy()
-    
+
+from snappy import jpy
+from snappy import ProductIO
+sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
+sys.path.append('../util')
+from py_snap_helpers import *
+sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')    
 # define the exit codes
 SUCCESS = 0
 ERR_RESOLUTION = 10
@@ -34,19 +46,207 @@ def main():
     
     os.chdir(ciop.tmp_dir)
     
-    aoi = ciop.getparam('aoi')
-   
-    for input in sys.stdin:
-        
-        output_name = os.path.join(ciop.tmp_dir, 
-                                   input.rstrip().split(',')[0])
+    #aoi = ciop.getparam('aoi')
+    coh_input_splits = []
+    sigma0_input_splits = []
+    
+    #### Read all input zip files consisting of two types dim files: coherence and sigma0
+    input_extract_dir = os.path.join(ciop.tmp_dir,'input_dir')
+    if not os.path.exists(input_extract_dir):
+        os.makedirs(input_extract_dir)
+ 
 
-        ciop.log('INFO', 'Do something')
+    for input in sys.stdin:
+        ciop.log('INFO', 'Processing file {}'.format(input.rstrip()))
+        #Only zip data files extracted 
+        if input.rstrip().split('.')[-1] == 'gz':
+            ciop.copy(input.rstrip(),ciop.tmp_dir,extract=False)
+            ciop.log('DEBUG','zipped input {} is staged-in'.format(input.rstrip().split('/')[-1]))
+            with tarfile.open(os.path.join(ciop.tmp_dir,input.rstrip().split('/')[-1]), "r:gz") as input_tarfile:
+                input_tarfile.extractall(path=input_extract_dir)
         
-        # add processing steps
         
-        ciop.log('INFO', 'Publish something')
-        ciop.publish(output_name + '.tif', mode='silent')
+        
+    ## Discriminate input files by name: Choose dim files to be inserted in SNAP graph
+    for file in os.listdir(input_extract_dir):
+        if file[-7:-4] == 'coh' and file.split('.')[-1]=='dim':
+            coh_input_splits.append(os.path.join(input_extract_dir,file))
+            ciop.log('DEBUG', 'Processing file {}'.format(file))
+        elif file[-10:-4] == 'sigma0' and file.split('.')[-1]=='dim':
+            sigma0_input_splits.append(os.path.join(input_extract_dir,file))
+            ciop.log('DEBUG', 'Processing file {}'.format(file))
+
+        
+    ciop.log('INFO', 'Total number of {} sub-swath & Polarisation input slices.'.format(len(coh_input_splits)))
+        
+    #####Process Inputs
+    graph = GraphProcessor('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/bin/gpt')
+    coh_read_nodes = []
+    sigma0_read_nodes = []
+    #### Process coherence input splits
+    operator = 'Read'
+    
+    for i in range(len(coh_input_splits)):
+        
+        parameters = get_operator_default_parameters(operator)
+        node_id = 'Read-COH-{}'.format(i)
+        source_node_id = ''
+        parameters['file'] = coh_input_splits[i]
+        graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_node_id)
+        
+        coh_read_nodes.append(node_id)
+        source_node_id_coh = node_id
+        
+    for i in range(len(sigma0_input_splits)):
+        
+        parameters = get_operator_default_parameters(operator)
+        node_id = 'Read-sigma0-{}'.format(i)
+        source_node_id = ''
+        parameters['file'] = sigma0_input_splits[i]
+        graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_node_id)
+        
+        sigma0_read_nodes.append(node_id)
+        source_node_id_sigma0 = node_id
+        
+    #### if one sub-swath skip TOPSAR-Merge   
+    if  len(coh_input_splits) > 1:
+        source_nodes_id = coh_read_nodes
+        operator = 'TOPSAR-Merge'
+        node_id = 'TOPSAR-Merge_coh_inputs'
+        parameters = get_operator_default_parameters(operator)
+        #parameters['selectedPolarisations'] = polarization
+        graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_nodes_id)
+        source_node_id_coh = node_id
+       
+        
+    if  len(sigma0_input_splits) > 1:
+        source_nodes_id = sigma0_read_nodes
+        operator = 'TOPSAR-Merge'
+        node_id = 'TOPSAR-Merge_sigma0_inputs'
+        parameters = get_operator_default_parameters(operator)
+        #parameters['selectedPolarisations'] = polarization  
+        graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_nodes_id)
+        source_node_id_sigma0 = node_id
+            
+            
+    ####Speckle filtering sigma0 merged inputs
+    operator = 'Speckle-Filter'
+    parameters = get_operator_default_parameters(operator)
+    parameters['filter'] = 'Lee Sigma'
+    parameters['filterSizeX'] = '3'
+    parameters['filterSizeY'] = '3' 
+    parameters['dampingFactor'] = '2' 
+    parameters['estimateENL'] = 'true'
+    parameters['enl'] = '1.0'
+    parameters['numLooksStr'] = '1'
+    parameters['windowSize'] = '7x7'
+    parameters['targetWindowSizeStr'] = '3x3'
+    parameters['sigmaStr'] = '0.9'
+    parameters['anSize'] = '50'
+        
+    node_id = 'Speckle-Filter_sigma0_inputs'         
+    graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_node_id_sigma0)
+    source_node_id_sigma0 = node_id
+    
+    ####Band Merge
+    operator = 'BandMerge'
+    parameters = get_operator_default_parameters(operator)
+    parameters['geographicError'] = '1.0E-5'
+        
+    node_id = 'BandMerge'         
+    graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         [source_node_id_sigma0,source_node_id_coh])  
+    source_node_id = node_id
+    
+    ####
+    operator = 'Terrain-Correction'
+    parameters = get_operator_default_parameters(operator)
+    parameters['demName'] = 'SRTM 1Sec HGT'
+    parameters['externalDEMNoDataValue'] = '0.0'
+    parameters['externalDEMApplyEGM'] = 'true' 
+    parameters['demResamplingMethod'] = 'BILINEAR_INTERPOLATION' 
+    parameters['imgResamplingMethod'] = 'BILINEAR_INTERPOLATION'
+    parameters['pixelSpacingInMeter'] = '10.0'
+    parameters['pixelSpacingInDegree'] = '0'
+    parameters['mapProjection'] = 'EPSG:4326'
+    parameters['alignToStandardGrid'] = 'false'
+    parameters['standardGridOriginX'] = '0'
+    parameters['standardGridOriginY'] = '0'
+    parameters['nodataValueAtSea'] = 'true'
+    parameters['saveDEM'] = 'false'
+    parameters['saveLatLon'] = 'false'
+    parameters['saveIncidenceAngleFromEllipsoid'] = 'false'
+    parameters['saveLocalIncidenceAngle'] = 'false'
+    parameters['saveProjectedLocalIncidenceAngle'] = 'false'
+    parameters['saveSelectedSourceBand'] = 'true'
+    parameters['outputComplex'] = 'false'
+    parameters['applyRadiometricNormalization'] = 'false'
+    parameters['saveSigmaNought'] = 'false'
+    parameters['saveGammaNought'] = 'false'
+    parameters['saveBetaNought'] = 'false'
+    parameters['incidenceAngleForSigma0'] = 'Use projected local incidence angle from DEM'
+    parameters['incidenceAngleForGamma0'] = 'Use projected local incidence angle from DEM'
+    parameters['auxFile'] = 'Latest Auxiliary File'
+    
+    node_id = 'Terrain-Correction'         
+    graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_node_id)
+    source_node_id = node_id
+    #### Create an output_dir to place the output
+#    local_output_dir = os.path.join(ciop.tmp_dir,'local_output_dir')
+#    if not os.path.exists(local_output_dir):
+#        os.makedirs(local_output_dir)
+    
+    operator = 'Write'
+    parameters = get_operator_default_parameters(operator)
+    parameters['formatName'] = 'BEAM-DIMAP'
+    parameters['file'] = os.path.join(ciop.tmp_dir, 'target.dim')    
+    node_id = 'Write'         
+    graph.add_node(node_id,
+                         operator, 
+                         parameters,
+                         source_node_id)
+    
+    
+    
+    
+    ####Run Graph
+    graph.run() 
+    
+    ciop.log('INFO', 'SNAP Processing finished successfully.')
+    
+    ####Publish Results
+    for suffix in ['dim' , 'data']:
+        ciop.publish(os.path.join(ciop.tmp_dir, 'target.{}'.format(suffix)))
+
+    ####Gdal post-processing to be added 
+    
+    ##ACD RGB file, name: ACD_{master_date}_{slave_date}
+    
+    
+    ##COG - UInt16
+    
+     
+
 
 try:
     main()
