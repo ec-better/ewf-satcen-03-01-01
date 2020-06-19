@@ -24,6 +24,10 @@ SUCCESS = 0
 ERR_RESOLUTION = 10
 ERR_STAGEIN = 20
 ERR_NO_OUTPUT = 30
+ERR_OVERLAP = 40
+ERR_PRODUCT_TYPE = 50
+ERR_TRACK = 60
+ERR_POLARISATION = 70
 
 # add a trap to exit gracefully
 def clean_exit(exit_code):
