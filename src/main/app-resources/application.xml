@@ -4,9 +4,26 @@
     <jobTemplate id="sub_swathing_inputs">
       <streamingExecutable>/application/sub_swathing_inputs/run</streamingExecutable>
       <defaultParameters>
-         <parameter id="subswath" title="Product subswath" abstract="Define the subswath of the product to be processed with SNAP" scope="test" maxOccurs="1">IW1</parameter>
-
-	 <parameter id="polarisation" title="Product polarisation" abstract="Define the product polarisation" scope="runtime" maxOccurs="1">VV</parameter>
+         <parameter id="subswath" title="Product subswath" abstract="Define the subswath of the product to be processed with SNAP" scope="test" maxOccurs="1">
+             <options>
+                 <option>IW1</option>
+                 <option>IW2</option>
+                 <option>IW3</option>
+                 <option>IW1,IW2</option>
+                 <option>IW2,IW3</option>
+                 <option>IW1,IW2,IW3</option>
+                 <default>IW1</default>
+            </options>
+         </parameter>
+	     <parameter id="polarisation" title="Product polarisation" abstract="Define the product polarisation" scope="runtime" maxOccurs="1">
+             <options>
+                        <option>VV</option>
+                        <option>VH</option>
+                        <option>HH</option>
+                        <option>HV</option>
+                        <default>VV</default>
+            </options>
+         </parameter>
       </defaultParameters>
       <defaultJobconf>      	
         <property id="ciop.job.max.tasks">1</property>
