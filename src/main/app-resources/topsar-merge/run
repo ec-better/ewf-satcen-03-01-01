@@ -236,7 +236,9 @@ def main():
     
     ####Publish Results
     for suffix in ['dim' , 'data']:
-        ciop.publish(os.path.join(ciop.tmp_dir, 'target.{}'.format(suffix)))
+        out_file = os.path.join(ciop.tmp_dir, 'target.{}'.format(suffix))
+        assert(os.path.exists(out_file)),'out file {} DOES NOT exist'.format(out_file)
+        ciop.publish(out_file, metalink=True)
 
     ####Gdal post-processing to be added 
     
