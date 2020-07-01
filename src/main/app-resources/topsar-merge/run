@@ -178,14 +178,14 @@ def main():
     ####
     operator = 'Terrain-Correction'
     parameters = get_operator_default_parameters(operator)
-    parameters['demName'] = 'SRTM 1Sec HGT'
+    parameters['demName'] = ciop.getparam('demtype')#'SRTM 1Sec HGT'
     parameters['externalDEMNoDataValue'] = '0.0'
     parameters['externalDEMApplyEGM'] = 'true' 
     parameters['demResamplingMethod'] = 'BILINEAR_INTERPOLATION' 
     parameters['imgResamplingMethod'] = 'BILINEAR_INTERPOLATION'
-    parameters['pixelSpacingInMeter'] = '10.0'
+    parameters['pixelSpacingInMeter'] = ciop.getparam('pixelSpacingInMeter')
     parameters['pixelSpacingInDegree'] = '0'
-    parameters['mapProjection'] = 'EPSG:4326'
+    parameters['mapProjection'] = ciop.getparam('mapProjection')
     parameters['alignToStandardGrid'] = 'false'
     parameters['standardGridOriginX'] = '0'
     parameters['standardGridOriginY'] = '0'
