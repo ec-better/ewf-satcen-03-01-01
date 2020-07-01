@@ -210,7 +210,7 @@ def main():
         operator = 'Apply-Orbit-File'
         parameters = get_operator_default_parameters(operator)
         
-        parameters['orbitType'] = 'Sentinel Precise (Auto Download)'
+        parameters['orbitType'] = ciop.getparam('orbittype')
         parameters['polyDegree'] = '3'
         parameters['continueOnFail'] = 'true' 
                  
@@ -258,7 +258,7 @@ def main():
         operator = 'Back-Geocoding'
         parameters = get_operator_default_parameters(operator)
                  
-        parameters['demName'] = 'SRTM 1Sec HGT'
+        parameters['demName'] = ciop.getparam('demtype')
         parameters['demResamplingMethod'] = 'BILINEAR_INTERPOLATION'
         parameters['externalDEMNoDataValue'] = '0.0'
         parameters['resamplingType'] = 'BILINEAR_INTERPOLATION'            
@@ -315,8 +315,8 @@ def main():
         operator = 'Coherence'
         parameters = get_operator_default_parameters(operator)
                  
-        parameters['cohWinAz'] = '2'
-        parameters['cohWinRg'] = '10'
+        parameters['cohWinAz'] = ciop.getparam('cohWinAz')
+        parameters['cohWinRg'] = ciop.getparam('cohWinRg')
         parameters['subtractFlatEarthPhase'] = 'false'
         parameters['srpPolynomialDegree'] = '5'         
         parameters['srpNumberPoints'] = '501'
