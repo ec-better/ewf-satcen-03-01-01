@@ -9,9 +9,9 @@
                  <option>IW1</option>
                  <option>IW2</option>
                  <option>IW3</option>
-                 <option>IW1,IW2</option>
-                 <option>IW2,IW3</option>
-                 <option>IW1,IW2,IW3</option>
+                 <option>IW1 IW2</option>
+                 <option>IW2 IW3</option>
+                 <option>IW1 IW2 IW3</option>
                  <default>IW1</default>
             </options>
          </parameter>
