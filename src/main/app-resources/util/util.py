@@ -1,6 +1,11 @@
 #!/opt/anaconda/envs/env_ewf_satcen_03_01_01/bin/python
 
 import cioppy
+import subprocess
+import gdal
+import osr
+import ogr
+
 
 ciop = cioppy.Cioppy()
 
@@ -31,3 +36,76 @@ def group_analysis(df):
             df.loc[i,'ordinal_type']='Pst'
 
     return 
+
+
+
+def cog(input_tif, output_tif, band=None):
+    
+    if band is not None:
+        translate_options = gdal.TranslateOptions(gdal.ParseCommandLine('-co TILED=YES ' \
+                                                                        '-co COPY_SRC_OVERVIEWS=YES ' \
+                                                                        '-co COMPRESS=LZW ' \
+                                                                        '-ot Float32 ' \
+                                                                        '-b band'))
+    else:
+        translate_options = gdal.TranslateOptions(gdal.ParseCommandLine('-co TILED=YES ' \
+                                                                        '-co COPY_SRC_OVERVIEWS=YES ' \
+                                                                        '-co COMPRESS=LZW ' \
+                                                                        '-ot Float32 ' \
+                                                                        '-b 1 -b 2 -b 3'))
+
+    ds = gdal.Open(input_tif, gdal.OF_READONLY)
+
+    gdal.SetConfigOption('COMPRESS_OVERVIEW', 'DEFLATE')
+    ds.BuildOverviews('NEAREST', [2,4,8,16,32])
+    
+    ds = None
+
+    ds = gdal.Open(input_tif)
+    gdal.Translate(output_tif,
+                   ds, 
+                   options=translate_options)
+    ds = None
+
+    os.remove('{}.ovr'.format(input_tif))
+    #os.remove(input_tif)
+                                                  
+
+
+def COG_merge(first, second, third, out_file):
+
+    ps = subprocess.Popen(
+        ['gdal_merge.py', '-o', out_file,
+         '-of', out_file,
+         first, second, third],
+        stdout=subprocess.PIPE
+    )
+    output = ps.communicate()[0]
+    for line in output.splitlines():
+        ciop.log('INFO',line)
+                                                  
+
+def get_image_wkt(product):
+    
+    src = gdal.Open(product)
+    ulx, xres, xskew, uly, yskew, yres  = src.GetGeoTransform()
+
+    max_x = ulx + (src.RasterXSize * xres)
+    min_y = uly + (src.RasterYSize * yres)
+    min_x = ulx 
+    max_y = uly
+
+    source = osr.SpatialReference()
+    source.ImportFromWkt(src.GetProjection())
+
+    target = osr.SpatialReference()
+    target.ImportFromEPSG(4326)
+
+    transform = osr.CoordinateTransformation(source, target)
+
+    result_wkt = box(transform.TransformPoint(min_x, min_y)[0],
+                     transform.TransformPoint(min_x, min_y)[1],
+                     transform.TransformPoint(max_x, max_y)[0],
+                     transform.TransformPoint(max_x, max_y)[1]).wkt
+    
+    return result_wkt

@@ -218,36 +218,130 @@ def main():
     
     operator = 'Write'
     parameters = get_operator_default_parameters(operator)
-    parameters['formatName'] = 'BEAM-DIMAP'
-    parameters['file'] = os.path.join(ciop.tmp_dir, 'target.dim')    
+    #parameters['formatName'] = 'BEAM-DIMAP'
+    parameters['formatName'] = 'GeoTIFF-BigTIFF'
+    parameters['file'] = os.path.join(ciop.tmp_dir, 'target.tif')    
     node_id = 'Write'         
     graph.add_node(node_id,
-                         operator, 
-                         parameters,
-                         source_node_id)
-    
-    
+                   operator, 
+                   parameters,
+                   source_node_id)
     
     
     ####Run Graph
     graph.run() 
     
     ciop.log('INFO', 'SNAP Processing finished successfully.')
+
+    
+    ####Gdal post-processing to be added
+
+    ##Sigma0_{master_info}; Sigma0_{slave_info}
+    master_info = '_'.join(sigma0_input_splits.split('_')[:-2])
+    slave_info = '_'.join(['_'.join(sigma0_input_splits.split('_')[:-3]),'_'.join(sigma0_input_splits.split('_')[-2:-1]).split('.')[0]])
+    Sigma0_master = 'Sigma0_{}'.format(master_info)
+    Sigma0_slave = 'Sigma0_{}'.format(slave_info)
+    
+    ciop.log('INFO','Creating Sigma0 master COG')
+    cog('target.tif', '{}.tif'.format(Sigma0_master), band=1)
+    
+    ciop.log('INFO','Creating Sigma0 slave COG')
+    cog('target.tif', '{}.tif'.format(Sigma0_slave), band=2)
+    
+    
+    ##Coherence_{master_info}_{slave_info}
+    Coh = 'Coherence_{}'.format(coh_input_splits.split('_')[:-1])
+    
+    ciop.log('INFO','Creating Coherence COG')
+    cog('target.tif','{}.tif'.format(Coh), band=3)
+    
+    
+    ##ACD RGB file, name: ACD_{master_date}_{slave_date}, R: Sigma0_{master_info}, G: Sigma0_{slave_info}, B: Sigma0_{slave_info}
+    master_date = coh_input_splits.split('_')[3]
+    slave_date = coh_input_splits.split('_')[4]
+    ACD = 'ACD_{}_{}'.format(master_date,slave_date)
+    
+    ciop.log('INFO','Creating ACD COG')
+    cog('target.tif', '{}.tif'.format(ACD), band=None)
+    cog_merge('{}.tif'.format(Sigma0_master),'{}.tif'.format(Sigma0_slave),'{}.tif'.format(Sigma0_slave),'{}.tif'.format(ACD))
+    
+    
+    ##CCD RGB file, name: CCD_{master_date}_{slave_date},  R: Sigma0_{master_info}, G: Sigma0_{slave_info}, B: Coherence_{master_info}_{slave_info}
+    CCD = 'CCD_{}_{}'.format(master_date,slave_date)
+    
+    ciop.log('INFO','Creating CCD COG')
+    cog_merge('{}.tif'.format(Sigma0_master),'{}.tif'.format(Sigma0_slave),'{}.tif'.format(Coh),'{}.tif'.format(CCD))
+    
+    
     
     ####Publish Results
-    for suffix in ['dim' , 'data']:
-        out_file = os.path.join(ciop.tmp_dir, 'target.{}'.format(suffix))
-        assert(os.path.exists(out_file)),'out file {} DOES NOT exist'.format(out_file)
-        ciop.publish(out_file, metalink=True)
+    for index, properties_file in enumerate(['result', 
+                                            'stage-in',
+                                             Sigma0_master,
+                                             Sigma0_slave,
+                                             Coh,
+                                             ACD,
+                                             CCD]):
 
-    ####Gdal post-processing to be added 
+    #date_format = '%Y-%m-%dT%H:%m:%SZ'
+                                            
+    if properties_file == 'result':
+        title = 'Reproducibility notebook used for generating {0}'.format(output_name)
+        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                              slave_date)
+    elif properties_file == 'stage-in':
+        title = 'Reproducibility stage-in notebook for Sentinel-1 data for generating {0}'.format(output_name)
+        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                              slave_date)
+    elif properties_file == Sigma0_master:
+        title = 'Sigma0 - Backscatter coefficient for master {0}'.format(master_info)
+        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                              master_date)
+    elif properties_file == Sigma0_slave:
+        title = 'Sigma0 - Backscatter coefficient for slave {0}'.format(slave_info)
+        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(slave_date,
+                                                              slave_date)
+        
+    elif properties_file == Coh:
+        title = 'Sentinel1 coherence between master {0} and slave {1}'.format(master_info,
+                                                                              slave_info)
+        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                              slave_date)
+    elif properties_file == CCD:
+        title = 'RGB composite of the coherence and backscatter coefficient for master/slave {}/{}'.format(master_info,
+                                                                                                           slave_info)
+        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                              slave_date)
+    elif properties_file == ACD:
+        title = 'RGB composite of the backscatter coefficient for master/slave {}/{}'.format(master_info,
+                                                                                             slave_info)
+        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                              slave_date)
     
-    ##ACD RGB file, name: ACD_{master_date}_{slave_date}
+    with open(properties_file + '.properties', 'wb') as file:
+        file.write('title={0}\n'.format(title))
+        file.write(date)
+        if index > 1:
+            file.write('geometry={0}'.format(get_image_wkt(properties_file + '.tif')))
+        
+        
+        
+        
+        
+        create_metadata(output_tif)
+        ciop.publish(output_tif, metalink=True)
+        ciop.publish('{}.properties'.format(output_tif), metalink=True)
+        
+        
+        
     
+        
     
-    ##COG - UInt16
+    #for suffix in ['dim' , 'data']:
+    #    out_file = os.path.join(ciop.tmp_dir, 'target.{}'.format(suffix))
+    #    assert(os.path.exists(out_file)),'out file {} DOES NOT exist'.format(out_file)
+    #    ciop.publish(out_file, metalink=True)
     
-     
 
 
 try:
