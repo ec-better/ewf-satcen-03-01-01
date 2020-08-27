@@ -48,7 +48,7 @@ def main():
     
     os.chdir(ciop.tmp_dir)
     
-    #aoi = ciop.getparam('aoi')
+    aoi = ciop.getparam('aoi')
     
     for input in sys.stdin:
         #Read dict 
@@ -179,7 +179,30 @@ def main():
                          source_nodes_id)
             source_node_id_s = node_id                 
 
-                 
+         
+        
+        
+        ####Beta Version for local test
+        
+        operator = 'Subset'   
+        parameters = get_operator_default_parameters(operator)
+        parameters['geoRegion'] = aoi
+        parameters['copyMetadata'] = 'true'
+        
+        node_id = 'Subset-S'
+        graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_s)
+        source_node_id_s = node_id
+        node_id = 'Subset-M'
+        graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_m)
+
+        source_node_id_m = node_id
+
                  
         ####Subswath & Pol split 
         
@@ -337,9 +360,9 @@ def main():
         source_node_id_ms = node_id
         ####General output name
         output_name = 'S1_{}_{}_{}_{}'.format(input_series_dict['subswath'],
-                                                                    input_series_dict['polarization'],
-                                                                    input_series_dict['master_startdate'][:10],
-                                                                    input_series_dict['slave_enddate'][:10])
+                                              input_series_dict['polarization'],
+                                              input_series_dict['master_startdate'],#[:10],
+                                              input_series_dict['slave_enddate'])#[:10])
         ####
         operator = 'Write'
         parameters = get_operator_default_parameters(operator)
