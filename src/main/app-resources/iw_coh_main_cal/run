@@ -48,7 +48,7 @@ def main():
     
     os.chdir(ciop.tmp_dir)
     
-    #aoi = ciop.getparam('aoi')
+    aoi = ciop.getparam('aoi')
     
     for input in sys.stdin:
         #Read dict 
@@ -179,7 +179,30 @@ def main():
                          source_nodes_id)
             source_node_id_s = node_id                 
 
-                 
+         
+        
+        
+        ####Beta Version for local test
+        
+        operator = 'Subset'   
+        parameters = get_operator_default_parameters(operator)
+        parameters['geoRegion'] = aoi
+        parameters['copyMetadata'] = 'true'
+        
+        node_id = 'Subset-S'
+        graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_s)
+        source_node_id_s = node_id
+        node_id = 'Subset-M'
+        graph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id_m)
+
+        source_node_id_m = node_id
+
                  
         ####Subswath & Pol split 
         
