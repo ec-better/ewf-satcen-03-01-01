@@ -2,8 +2,10 @@ name: env_ewf_satcen_03_01_01
 channels:
   - terradue
   - r
-  - conda-forge
+  - https://conda.anaconda.org/r
+  - https://conda.anaconda.org/terradue
   - defaults
+  - conda-forge
 dependencies:
   - _libgcc_mutex=0.1=main
   - attrs=19.3.0=py_0
