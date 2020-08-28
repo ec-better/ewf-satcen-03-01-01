@@ -237,10 +237,18 @@ def main():
     ####Gdal post-processing to be added
 
     ##Sigma0_{master_info}; Sigma0_{slave_info}
-    master_info = '_'.join(sigma0_input_splits.split('_')[:-2])
-    slave_info = '_'.join(['_'.join(sigma0_input_splits.split('_')[:-3]),'_'.join(sigma0_input_splits.split('_')[-2:-1]).split('.')[0]])
-    Sigma0_master = 'Sigma0_{}'.format(master_info)
-    Sigma0_slave = 'Sigma0_{}'.format(slave_info)
+    
+    # Modified master-slave info
+    # Caused error: AttributeError: 'list' object has no attribute 'split'
+    
+    #master_info = '_'.join(sigma0_input_splits.split('_')[:-2])
+    #slave_info = '_'.join(['_'.join(sigma0_input_splits.split('_')[:-3]),'_'.join(sigma0_input_splits.split('_')[-2:-1]).split('.')[0]])
+    
+    master_date = sigma0_input_splits[0].split('_')[:-2]
+    slave_date = (sigma0_input_splits[0].split('_')[:-1]).split('.')[0]
+    
+    Sigma0_master = 'Sigma0_{}'.format(master_date)
+    Sigma0_slave = 'Sigma0_{}'.format(slave_date)
     
     ciop.log('INFO','Creating Sigma0 master COG')
     cog('target.tif', '{}.tif'.format(Sigma0_master), band=1)
@@ -250,15 +258,15 @@ def main():
     
     
     ##Coherence_{master_info}_{slave_info}
-    Coh = 'Coherence_{}'.format(coh_input_splits.split('_')[:-1])
+    Coh = 'Coherence_{}_{}'.format(master_date, slave_date)
     
     ciop.log('INFO','Creating Coherence COG')
     cog('target.tif','{}.tif'.format(Coh), band=3)
     
     
     ##ACD RGB file, name: ACD_{master_date}_{slave_date}, R: Sigma0_{master_info}, G: Sigma0_{slave_info}, B: Sigma0_{slave_info}
-    master_date = coh_input_splits.split('_')[3]
-    slave_date = coh_input_splits.split('_')[4]
+    #master_date = coh_input_splits.split('_')[3]
+    #slave_date = coh_input_splits.split('_')[4]
     ACD = 'ACD_{}_{}'.format(master_date,slave_date)
     
     ciop.log('INFO','Creating ACD COG')
