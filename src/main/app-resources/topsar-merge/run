@@ -45,6 +45,7 @@ def main():
     ciop = cioppy.Cioppy()
     
     os.chdir(ciop.tmp_dir)
+    ciop.log('DEBUG', 'ciop path is :{}'.format(ciop.tmp_dir))
     
     #aoi = ciop.getparam('aoi')
     coh_input_splits = []
@@ -60,11 +61,11 @@ def main():
         ciop.log('INFO', 'Processing file {}'.format(input.rstrip()))
         #Only zip data files extracted 
         if input.rstrip().split('.')[-1] == 'gz':
-            ciop.copy(input.rstrip(),ciop.tmp_dir,extract=False)
-            ciop.log('DEBUG','zipped input {} is staged-in'.format(input.rstrip().split('/')[-1]))
-            with tarfile.open(os.path.join(ciop.tmp_dir,input.rstrip().split('/')[-1]), "r:gz") as input_tarfile:
+            ciop.copy(input.rstrip(),input_extract_dir,extract=False)
+            ciop.log('DEBUG','zipped input {} is staged-in'.format(os.path.basename(input.rstrip())))
+            with tarfile.open(os.path.join(input_extract_dir,os.path.basename(input.rstrip())), "r:gz") as input_tarfile:
                 input_tarfile.extractall(path=input_extract_dir)
-        
+            os.remove(os.path.join(input_extract_dir,os.path.basename(input.rstrip())))
         
         
     ## Discriminate input files by name: Choose dim files to be inserted in SNAP graph
@@ -75,8 +76,7 @@ def main():
         elif file[-10:-4] == 'sigma0' and file.split('.')[-1]=='dim':
             sigma0_input_splits.append(os.path.join(input_extract_dir,file))
             ciop.log('DEBUG', 'Processing file {}'.format(file))
-
-        
+            output_name = file[:-11]    
     ciop.log('INFO', 'Total number of {} sub-swath & Polarisation input slices.'.format(len(coh_input_splits)))
         
     #####Process Inputs
@@ -275,62 +275,57 @@ def main():
     
     
     ####Publish Results
-    for index, properties_file in enumerate(['result', 
+    for index, output_file in enumerate(['result', 
                                             'stage-in',
                                              Sigma0_master,
                                              Sigma0_slave,
                                              Coh,
                                              ACD,
                                              CCD]):
-
-    #date_format = '%Y-%m-%dT%H:%m:%SZ'
                                             
-    if properties_file == 'result':
-        title = 'Reproducibility notebook used for generating {0}'.format(output_name)
-        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
-                                                              slave_date)
-    elif properties_file == 'stage-in':
-        title = 'Reproducibility stage-in notebook for Sentinel-1 data for generating {0}'.format(output_name)
-        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
-                                                              slave_date)
-    elif properties_file == Sigma0_master:
-        title = 'Sigma0 - Backscatter coefficient for master {0}'.format(master_info)
-        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
-                                                              master_date)
-    elif properties_file == Sigma0_slave:
-        title = 'Sigma0 - Backscatter coefficient for slave {0}'.format(slave_info)
-        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(slave_date,
-                                                              slave_date)
-        
-    elif properties_file == Coh:
-        title = 'Sentinel1 coherence between master {0} and slave {1}'.format(master_info,
-                                                                              slave_info)
-        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
-                                                              slave_date)
-    elif properties_file == CCD:
-        title = 'RGB composite of the coherence and backscatter coefficient for master/slave {}/{}'.format(master_info,
-                                                                                                           slave_info)
-        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
-                                                              slave_date)
-    elif properties_file == ACD:
-        title = 'RGB composite of the backscatter coefficient for master/slave {}/{}'.format(master_info,
-                                                                                             slave_info)
-        date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
-                                                              slave_date)
-    
-    with open(properties_file + '.properties', 'wb') as file:
-        file.write('title={0}\n'.format(title))
-        file.write(date)
-        if index > 1:
-            file.write('geometry={0}'.format(get_image_wkt(properties_file + '.tif')))
-        
-        
-        
-        
-        
-        create_metadata(output_tif)
-        ciop.publish(output_tif, metalink=True)
-        ciop.publish('{}.properties'.format(output_tif), metalink=True)
+        if output_file == 'result':
+            title = 'Reproducibility notebook used for generating {0}'.format(output_name)
+            date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                                  slave_date)
+        elif output_file == 'stage-in':
+            title = 'Reproducibility stage-in notebook for Sentinel-1 data for generating {0}'.format(output_name)
+            date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                                  slave_date)
+        elif output_file == Sigma0_master:
+            title = 'Sigma0 - Backscatter coefficient for master {0}'.format(master_info)
+            date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                                  master_date)
+        elif output_file == Sigma0_slave:
+            title = 'Sigma0 - Backscatter coefficient for slave {0}'.format(slave_info)
+            date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(slave_date,
+                                                                  slave_date)
+
+        elif output_file == Coh:
+            title = 'Sentinel1 coherence between master {0} and slave {1}'.format(master_info,
+                                                                                  slave_info)
+            date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                                  slave_date)
+        elif output_file == CCD:
+            title = 'RGB composite of the coherence and backscatter coefficient for master/slave {}/{}'.format(master_info,
+                                                                                                               slave_info)
+            date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                                  slave_date)
+        elif output_file == ACD:
+            title = 'RGB composite of the backscatter coefficient for master/slave {}/{}'.format(master_info,
+                                                                                                 slave_info)
+            date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                                  slave_date)
+
+        with open(output_file + '.properties', 'wb') as file:
+            file.write('title={0}\n'.format(title))
+            file.write(date)
+            if index > 1:
+                file.write('geometry={0}'.format(get_image_wkt(output_file + '.tif')))
+
+
+        #create_metadata(output_tif)
+        ciop.publish(output_file, metalink=True)
+        ciop.publish('{}.properties'.format(output_file), metalink=True)
         
         
         
