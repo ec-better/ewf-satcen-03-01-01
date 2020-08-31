@@ -244,8 +244,8 @@ def main():
     #master_info = '_'.join(sigma0_input_splits.split('_')[:-2])
     #slave_info = '_'.join(['_'.join(sigma0_input_splits.split('_')[:-3]),'_'.join(sigma0_input_splits.split('_')[-2:-1]).split('.')[0]])
     
-    master_date = sigma0_input_splits[0].split('_')[:-2]
-    slave_date = (sigma0_input_splits[0].split('_')[:-1]).split('.')[0]
+    master_date = sigma0_input_splits[0].split('_')[-2]
+    slave_date = sigma0_input_splits[0].split('_')[-3]
     
     Sigma0_master = 'Sigma0_{}'.format(master_date)
     Sigma0_slave = 'Sigma0_{}'.format(slave_date)
