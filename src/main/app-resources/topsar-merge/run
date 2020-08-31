@@ -19,6 +19,7 @@ from snappy import ProductIO
 sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
 sys.path.append('../util')
 from py_snap_helpers import *
+from util import *
 sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')    
 # define the exit codes
 SUCCESS = 0
