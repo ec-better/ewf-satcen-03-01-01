@@ -248,49 +248,51 @@ def main():
     master_date = sigma0_input_splits[0].split('_')[-2]
     slave_date = sigma0_input_splits[0].split('_')[-3]
     
-    Sigma0_master = 'Sigma0_{}'.format(master_date)
-    Sigma0_slave = 'Sigma0_{}'.format(slave_date)
+    Sigma0_master = 'Sigma0_{}.tif'.format(master_date)
+    Sigma0_slave = 'Sigma0_{}.tif'.format(slave_date)
     
     ciop.log('INFO','Creating Sigma0 master COG')
-    cog('target.tif', '{}.tif'.format(Sigma0_master), band=1)
+    cog(os.path.join(ciop.tmp_dir,'target.tif'), os.path.join(ciop.tmp_dir,Sigma0_master), band=1)
     
     ciop.log('INFO','Creating Sigma0 slave COG')
-    cog('target.tif', '{}.tif'.format(Sigma0_slave), band=2)
+    cog(os.path.join(ciop.tmp_dir,'target.tif'), os.path.join(ciop.tmp_dir,Sigma0_slave), band=2)
     
     
     ##Coherence_{master_info}_{slave_info}
-    Coh = 'Coherence_{}_{}'.format(master_date, slave_date)
+    Coh = 'Coherence_{}_{}.tif'.format(master_date, slave_date)
     
     ciop.log('INFO','Creating Coherence COG')
-    cog('target.tif','{}.tif'.format(Coh), band=3)
+    cog(os.path.join(ciop.tmp_dir,'target.tif'),os.path.join(ciop.tmp_dir,Coh), band=3)
     
     
     ##ACD RGB file, name: ACD_{master_date}_{slave_date}, R: Sigma0_{master_info}, G: Sigma0_{slave_info}, B: Sigma0_{slave_info}
     #master_date = coh_input_splits.split('_')[3]
     #slave_date = coh_input_splits.split('_')[4]
-    ACD = 'ACD_{}_{}'.format(master_date,slave_date)
+    ACD = 'ACD_{}_{}.tif'.format(master_date,slave_date)
     
     ciop.log('INFO','Creating ACD COG')
-    cog('target.tif', '{}.tif'.format(ACD), band=None)
-    cog_merge('{}.tif'.format(Sigma0_master),'{}.tif'.format(Sigma0_slave),'{}.tif'.format(Sigma0_slave),'{}.tif'.format(ACD))
+
+    #COG_merge(Sigma0_master,Sigma0_slave,Sigma0_slave,ACD)
     
     
     ##CCD RGB file, name: CCD_{master_date}_{slave_date},  R: Sigma0_{master_info}, G: Sigma0_{slave_info}, B: Coherence_{master_info}_{slave_info}
-    CCD = 'CCD_{}_{}'.format(master_date,slave_date)
+    CCD = 'CCD_{}_{}.tif'.format(master_date,slave_date)
     
     ciop.log('INFO','Creating CCD COG')
-    cog_merge('{}.tif'.format(Sigma0_master),'{}.tif'.format(Sigma0_slave),'{}.tif'.format(Coh),'{}.tif'.format(CCD))
+    #COG_merge(Sigma0_master,Sigma0_slave,Coh,CCD)
+    cog(os.path.join(ciop.tmp_dir,'target.tif'),os.path.join(ciop.tmp_dir,CCD),band=None)
     
     
     
     ####Publish Results
+
     for index, output_file in enumerate(['result', 
-                                            'stage-in',
-                                             Sigma0_master,
-                                             Sigma0_slave,
-                                             Coh,
-                                             ACD,
-                                             CCD]):
+                                        'stage-in',
+                                         Sigma0_master,
+                                          Sigma0_slave,
+                                          Coh,
+                                          #ACD,
+                                          CCD]):
                                             
         if output_file == 'result':
             title = 'Reproducibility notebook used for generating {0}'.format(output_name)
@@ -329,11 +331,14 @@ def main():
             file.write('title={0}\n'.format(title))
             file.write(date)
             if index > 1:
-                file.write('geometry={0}'.format(get_image_wkt(output_file + '.tif')))
+                file.write('geometry={0}'.format(get_image_wkt(os.path.join(ciop.tmp_dir, output_file))))
 
 
         #create_metadata(output_tif)
-        ciop.publish(output_file, metalink=True)
+        
+        # Beta Version: result & stage-in format to be controlled
+        if index > 1:
+            ciop.publish(os.path.join(ciop.tmp_dir, output_file), metalink=True)
         ciop.publish('{}.properties'.format(output_file), metalink=True)
         
         
