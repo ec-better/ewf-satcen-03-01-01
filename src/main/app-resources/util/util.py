@@ -5,7 +5,7 @@ import subprocess
 import gdal
 import osr
 import ogr
-
+import subprocess
 
 ciop = cioppy.Cioppy()
 
@@ -46,7 +46,7 @@ def cog(input_tif, output_tif, band=None):
                                                                         '-co COPY_SRC_OVERVIEWS=YES ' \
                                                                         '-co COMPRESS=LZW ' \
                                                                         '-ot Float32 ' \
-                                                                        '-b band'))
+                                                                        '-b {}'.format(band)))
     else:
         translate_options = gdal.TranslateOptions(gdal.ParseCommandLine('-co TILED=YES ' \
                                                                         '-co COPY_SRC_OVERVIEWS=YES ' \
@@ -67,7 +67,7 @@ def cog(input_tif, output_tif, band=None):
                    options=translate_options)
     ds = None
 
-    os.remove('{}.ovr'.format(input_tif))
+    #os.remove('{}.ovr'.format(input_tif))
     #os.remove(input_tif)
                                                   
 
