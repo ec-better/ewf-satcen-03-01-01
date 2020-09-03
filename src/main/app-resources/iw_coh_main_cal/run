@@ -401,7 +401,11 @@ def main():
 
         tar = tarfile.open("{}.tar.gz".format(output_name), "w:gz")
         for file_name in [sigma0_output_name,coh_output_name,'{}.data'.format(sigma0_output_name.split('.')[0]),'{}.data'.format(coh_output_name.split('.')[0]) ]:
-            tar.add(file_name)
+            if os.path.exists(os.path.join(ciop.tmp_dir,file_name)):
+                tar.add(os.path.join(ciop.tmp_dir,file_name))
+            else:
+                ciop.log('DEBUG', '{} DOES NOT EXIST!'.format(file_name))                
+            
         tar.close()
     
     
