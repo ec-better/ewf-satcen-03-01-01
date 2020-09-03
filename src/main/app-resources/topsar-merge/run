@@ -328,10 +328,10 @@ def main():
                                                                   slave_date)
 
         with open(output_file + '.properties', 'wb') as file:
-            file.write('title={0}\n'.format(title))
-            file.write(date)
+            file.write(bytes('title={0}\n'.format(title),encoding = 'utf-8'))
+            file.write(bytes('date={0}\n'.format(date),encoding = 'utf-8'))
             if index > 1:
-                file.write('geometry={0}'.format(get_image_wkt(os.path.join(ciop.tmp_dir, output_file))))
+                 file.write(bytes('geometry={0}'.format(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8'))
 
 
         #create_metadata(output_tif)
