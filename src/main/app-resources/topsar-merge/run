@@ -286,8 +286,8 @@ def main():
     
     ####Publish Results
 
-    for index, output_file in enumerate(['result', 
-                                        'stage-in',
+    for index, output_file in enumerate([#'result', 
+                                        #'stage-in',
                                          Sigma0_master,
                                           Sigma0_slave,
                                           Coh,
@@ -330,15 +330,13 @@ def main():
         with open(output_file + '.properties', 'wb') as file:
             file.write(bytes('title={0}\n'.format(title),encoding = 'utf-8'))
             file.write(bytes('date={0}\n'.format(date),encoding = 'utf-8'))
-            if index > 1:
+            if (index > 1):
                  file.write(bytes('geometry={0}'.format(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8'))
 
-
         #create_metadata(output_tif)
-        
         # Beta Version: result & stage-in format to be controlled
-        if index > 1:
-            ciop.publish(os.path.join(ciop.tmp_dir, output_file), metalink=True)
+
+        ciop.publish(os.path.join(ciop.tmp_dir, output_file), metalink=True)
         ciop.publish('{}.properties'.format(output_file), metalink=True)
         
         
