@@ -6,6 +6,7 @@ import gdal
 import osr
 import ogr
 import subprocess
+from shapely.geometry import box
 
 ciop = cioppy.Cioppy()
 
@@ -84,7 +85,7 @@ def COG_merge(first, second, third, out_file):
     for line in output.splitlines():
         ciop.log('INFO',line)
                                                   
-
+# Modified the function to accept the img either if does NOT have Projection
 def get_image_wkt(product):
     
     src = gdal.Open(product)
@@ -94,16 +95,18 @@ def get_image_wkt(product):
     min_y = uly + (src.RasterYSize * yres)
     min_x = ulx 
     max_y = uly
+    if src.GetProjection()=='':
+        result_wkt = box(min_x, min_y, max_x, max_y).wkt
+    else:
+        source = osr.SpatialReference()
+        source.ImportFromWkt(src.GetProjection())
 
-    source = osr.SpatialReference()
-    source.ImportFromWkt(src.GetProjection())
+        target = osr.SpatialReference()
+        target.ImportFromEPSG(4326)
 
-    target = osr.SpatialReference()
-    target.ImportFromEPSG(4326)
+        transform = osr.CoordinateTransformation(source, target)
 
-    transform = osr.CoordinateTransformation(source, target)
-
-    result_wkt = box(transform.TransformPoint(min_x, min_y)[0],
+        result_wkt = box(transform.TransformPoint(min_x, min_y)[0],
                      transform.TransformPoint(min_x, min_y)[1],
                      transform.TransformPoint(max_x, max_y)[0],
                      transform.TransformPoint(max_x, max_y)[1]).wkt
