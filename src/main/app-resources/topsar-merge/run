@@ -332,7 +332,9 @@ def main():
             file.write(bytes('date={0}\n'.format(date),encoding = 'utf-8'))
 #            if (index > 1):
 #                 file.write(bytes('geometry={0}'.format(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8')))
-            file.write(bytes('geometry={0}'.format(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8')))
+            file.write(bytes('geometry=',encoding = 'utf-8'))
+            file.write(bytes(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8'))
+
 
         #create_metadata(output_tif)
         # Beta Version: result & stage-in format to be controlled
