@@ -251,6 +251,9 @@ def main():
     Sigma0_master = 'Sigma0_{}.tif'.format(master_date)
     Sigma0_slave = 'Sigma0_{}.tif'.format(slave_date)
     
+    # For test publish also raw output data
+    ciop.publish(os.path.join(ciop.tmp_dir, 'target.tif'), metalink=True)
+    
     ciop.log('INFO','Creating Sigma0 master COG')
     cog(os.path.join(ciop.tmp_dir,'target.tif'), os.path.join(ciop.tmp_dir,Sigma0_master), band=1)
     
