@@ -137,7 +137,7 @@ def main():
             master_read_nodes.append(node_id)
 
         if len(master_local_path)>1:
-        
+            ciop.log("INFO", "More than one master product found, slice_Assembly on-going " )  
             source_nodes_id = master_read_nodes
             operator = 'SliceAssembly'
             node_id = 'SliceAssembly-M'
@@ -152,7 +152,7 @@ def main():
         ####Read and Assemble Slaves
         for i in range(len(slave_local_path)):
         
-            
+            ciop.log("INFO", "More than one slave product found, slice_Assembly on-going " ) 
             operator = 'Read'
             parameters = get_operator_default_parameters(operator)
             node_id = 'Read-S-{0}'.format(i)
@@ -178,8 +178,11 @@ def main():
                          parameters,
                          source_nodes_id)
             source_node_id_s = node_id                 
-
- 
+    
+        ####Count max bursts 
+        burst_slv = 9*len(slave_local_path)
+        burst_mst = 9*len(master_local_path)
+        burst_num = max(burst_slv,burst_mst)
                  
         ####Subswath & Pol split 
         
@@ -188,7 +191,7 @@ def main():
         parameters['selectedPolarisations'] = input_series_dict['polarization']
         parameters['subswath'] = input_series_dict['subswath'] 
         parameters['firstBurstIndex'] = '1' 
-        parameters['lastBurstIndex'] = '9' 
+        parameters['lastBurstIndex'] = '{}'.format(burst_num) 
         #parameters['wktAoi'] = aoi
                  
         node_id = 'TOPSAR-Split-M'         
