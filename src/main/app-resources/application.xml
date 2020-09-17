@@ -9,10 +9,10 @@
                  <option>IW1</option>
                  <option>IW2</option>
                  <option>IW3</option>
-                 <option>IW1,IW2</option>
-                 <option>IW2,IW3</option>
-                 <option>IW1,IW2,IW3</option>
-                 <default>IW1,IW2,IW3</default>
+                 <option>IW1;IW2</option>
+                 <option>IW2;IW3</option>
+                 <option>IW1;IW2;IW3</option>
+                 <default>IW1;IW2;IW3</default>
             </options>
          </parameter>
          <parameter id="polarisation" title="Product polarisation" abstract="Define the product polarisation" scope="runtime" maxOccurs="1">
@@ -34,7 +34,6 @@
       <streamingExecutable>/application/iw_coh_main_cal/run</streamingExecutable>
       <defaultParameters>
           <parameter id="orbittype" title="Orbit type" abstract="Define the orbit source for the Orbit Correction. NOTE: Precise orbit is available after 20 days of the data acquisition time." scope="runtime" maxOccurs="1">Sentinel Precise (Auto Download)</parameter>
-          <parameter id="aoi" title="area of interest" abstract="AOI" scope="runtime" maxOccurs="1">POLYGON ((151.26 -35.3, 151.26 -35, 148.5 -35, 148.5 -35.3, 151.26 -35.3))</parameter>
          <parameter id="cohWinAz" title="Azimuth coherence window size" abstract="Define the coherence estimation azimuth window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">2</parameter>
          <parameter id="cohWinRg" title="Range coherence window size" abstract="Define the coherence estimation range window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">10</parameter>
          <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">SRTM 1Sec HGT</parameter>

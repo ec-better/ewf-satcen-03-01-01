@@ -48,7 +48,7 @@ def main():
     
     os.chdir(ciop.tmp_dir)
     
-    aoi = ciop.getparam('aoi')
+    
     
     for input in sys.stdin:
         #Read dict 

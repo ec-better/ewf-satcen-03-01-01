@@ -45,12 +45,14 @@ def cog(input_tif, output_tif, band=None):
     if band is not None:
         translate_options = gdal.TranslateOptions(gdal.ParseCommandLine('-co TILED=YES ' \
                                                                         '-co COPY_SRC_OVERVIEWS=YES ' \
+                                                                        '-co BIGTIFF=YES ' \
                                                                         '-co COMPRESS=LZW ' \
                                                                         '-ot Float32 ' \
                                                                         '-b {}'.format(band)))
     else:
         translate_options = gdal.TranslateOptions(gdal.ParseCommandLine('-co TILED=YES ' \
                                                                         '-co COPY_SRC_OVERVIEWS=YES ' \
+                                                                        '-co BIGTIFF=YES ' \
                                                                         '-co COMPRESS=LZW ' \
                                                                         '-ot Float32 ' \
                                                                         '-b 1 -b 2 -b 3'))
