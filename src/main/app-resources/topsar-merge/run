@@ -71,13 +71,18 @@ def main():
         
     ## Discriminate input files by name: Choose dim files to be inserted in SNAP graph
     for file in os.listdir(input_extract_dir):
-        if file[-7:-4] == 'coh' and file.split('.')[-1]=='dim':
+        ciop.log('DEBUG', 'Processing file {}'.format(file))
+        #if file[-7:-4] == 'coh' in and file.split('.')[-1]=='dim':
+        if 'coh' in file and '.dim' in file:
             coh_input_splits.append(os.path.join(input_extract_dir,file))
-            ciop.log('DEBUG', 'Processing file {}'.format(file))
-        elif file[-10:-4] == 'sigma0' and file.split('.')[-1]=='dim':
+            
+        #elif file[-10:-4] == 'sigma0' and file.split('.')[-1]=='dim':
+        elif 'sigma0' in file ==  and and '.dim' in file:
             sigma0_input_splits.append(os.path.join(input_extract_dir,file))
-            ciop.log('DEBUG', 'Processing file {}'.format(file))
-            output_name = file[:-11]    
+            #output_name = file[:-11]
+        
+        output_name = file[:-11]
+            
     ciop.log('INFO', 'Total number of {} sub-swath & Polarisation input slices.'.format(len(coh_input_splits)))
         
     #####Process Inputs
@@ -242,17 +247,22 @@ def main():
     # Modified master-slave info
     # Caused error: AttributeError: 'list' object has no attribute 'split'
     
-    #master_info = '_'.join(sigma0_input_splits.split('_')[:-2])
-    #slave_info = '_'.join(['_'.join(sigma0_input_splits.split('_')[:-3]),'_'.join(sigma0_input_splits.split('_')[-2:-1]).split('.')[0]])
+    #master_date = sigma0_input_splits[0].split('_')[-2]
+    #slave_date = sigma0_input_splits[0].split('_')[-3]
+    master_date = sigma0_input_splits[0].split('_')[5]
+    slave_date = sigma0_input_splits[0].split('_')[11]
     
-    master_date = sigma0_input_splits[0].split('_')[-2]
-    slave_date = sigma0_input_splits[0].split('_')[-3]
+    master_info = sigma0_input_splits[0].split('_')[:6]
+    slave_info = sigma0_input_splits[0].split('_')[6:12]
     
-    Sigma0_master = 'Sigma0_{}.tif'.format(master_date)
-    Sigma0_slave = 'Sigma0_{}.tif'.format(slave_date)
+    
+    #Sigma0_master = 'Sigma0_{}.tif'.format(master_date)
+    #Sigma0_slave = 'Sigma0_{}.tif'.format(slave_date)
+    Sigma0_master = 'Sigma0_{}.tif'.format(master_info)
+    Sigma0_slave = 'Sigma0_{}.tif'.format(master_info)
     
     # For test publish also raw output data
-    ciop.publish(os.path.join(ciop.tmp_dir, 'target.tif'), metalink=True)
+    #ciop.publish(os.path.join(ciop.tmp_dir, 'target.tif'), metalink=True)
     
     ciop.log('INFO','Creating Sigma0 master COG')
     cog(os.path.join(ciop.tmp_dir,'target.tif'), os.path.join(ciop.tmp_dir,Sigma0_master), band=1)
@@ -262,15 +272,16 @@ def main():
     
     
     ##Coherence_{master_info}_{slave_info}
-    Coh = 'Coherence_{}_{}.tif'.format(master_date, slave_date)
+    #Coh = 'Coherence_{}_{}.tif'.format(master_date, slave_date)
+    Coh = 'Coherence_{}_{}.tif'.format(master_info, slave_info)
     
     ciop.log('INFO','Creating Coherence COG')
     cog(os.path.join(ciop.tmp_dir,'target.tif'),os.path.join(ciop.tmp_dir,Coh), band=3)
     
     
     ##ACD RGB file, name: ACD_{master_date}_{slave_date}, R: Sigma0_{master_info}, G: Sigma0_{slave_info}, B: Sigma0_{slave_info}
-    master_date = coh_input_splits.split('_')[3]
-    slave_date = coh_input_splits.split('_')[4]
+    #master_date = coh_input_splits.split('_')[3]
+    #slave_date = coh_input_splits.split('_')[4]
     ACD = 'ACD_{}_{}.tif'.format(master_date,slave_date)
     
     ciop.log('INFO','Creating ACD COG')
@@ -289,19 +300,19 @@ def main():
     
     ####Publish Results
 
-    for index, output_file in enumerate([#'result', 
-                                        #'stage-in',
+    for index, output_file in enumerate(['result.ipynb', 
+                                         'stage-in.ipynb',
                                          Sigma0_master,
-                                          Sigma0_slave,
-                                          Coh,
-                                          #ACD,
-                                          CCD]):
+                                         Sigma0_slave,
+                                         Coh,
+                                         ACD,
+                                         CCD]):
                                             
-        if output_file == 'result':
+        if output_file == 'result.ipynb':
             title = 'Reproducibility notebook used for generating {0}'.format(output_name)
             date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
-                                                                  slave_date)
-        elif output_file == 'stage-in':
+                                                             slave_date)
+        elif output_file == 'stage-in.ipynb':
             title = 'Reproducibility stage-in notebook for Sentinel-1 data for generating {0}'.format(output_name)
             date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
                                                                   slave_date)
@@ -312,7 +323,7 @@ def main():
         elif output_file == Sigma0_slave:
             title = 'Sigma0 - Backscatter coefficient for slave {0}'.format(slave_date)
             date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(slave_date,
-                                                                  slave_date)
+                                                             slave_date)
 
         elif output_file == Coh:
             title = 'Sentinel1 coherence between master {0} and slave {1}'.format(master_date,
@@ -323,20 +334,20 @@ def main():
             title = 'RGB composite of the coherence and backscatter coefficient for master/slave {}/{}'.format(master_date,
                                                                                                                slave_date)
             date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
-                                                                  slave_date)
+                                                             slave_date)
         elif output_file == ACD:
             title = 'RGB composite of the backscatter coefficient for master/slave {}/{}'.format(master_date,
                                                                                                  slave_date)
             date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
-                                                                  slave_date)
+                                                             slave_date)
 
         with open(os.path.join(ciop.tmp_dir, '{}.properties'.format(output_file)) , 'wb') as file:
             file.write(bytes('title={0}\n'.format(title),encoding = 'utf-8'))
             file.write(bytes('date={0}\n'.format(date),encoding = 'utf-8'))
-#            if (index > 1):
-#                 file.write(bytes('geometry={0}'.format(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8')))
-            file.write(bytes('geometry=',encoding = 'utf-8'))
-            file.write(bytes(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8'))
+            if (index > 1):
+                #file.write(bytes('geometry={0}'.format(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8')))
+                file.write(bytes('geometry=',encoding = 'utf-8'))
+                file.write(bytes(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8'))
 
 
         #create_metadata(output_tif) #No refrence to function found
@@ -346,11 +357,6 @@ def main():
         ciop.publish(os.path.join(ciop.tmp_dir, '{}.properties'.format(output_file)), metalink=True)
         
         
-        
-    
-
-    
-
 
 try:
     main()
