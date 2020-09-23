@@ -79,7 +79,7 @@ def COG_merge(first, second, third, out_file):
 
     ps = subprocess.Popen(
         ['gdal_merge.py', '-o', out_file,
-         '-of', out_file,
+         #'-of', 'GTiff',
          first, second, third],
         stdout=subprocess.PIPE
     )
