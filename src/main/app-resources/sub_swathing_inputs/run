@@ -101,6 +101,8 @@ def main():
         series['subswath'] = k
         series['polarization'] = pol
         
+        ciop.log('DEBUG','input_series: \{}'.format(series))
+        
         #publish master/slave/subswath/pol and echo to next node 
         ciop.publish((json.dumps(series) + '\n'), mode="silent")
 
