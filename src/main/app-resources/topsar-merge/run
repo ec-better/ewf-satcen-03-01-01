@@ -79,9 +79,7 @@ def main():
         #elif file[-10:-4] == 'sigma0' and file.split('.')[-1]=='dim':
         elif 'sigma0' in file ==  and and '.dim' in file:
             sigma0_input_splits.append(os.path.join(input_extract_dir,file))
-            #output_name = file[:-11]
-        
-        output_name = file[:-11]
+            output_name = file[:-11]
             
     ciop.log('INFO', 'Total number of {} sub-swath & Polarisation input slices.'.format(len(coh_input_splits)))
         
