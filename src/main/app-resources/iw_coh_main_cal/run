@@ -137,7 +137,7 @@ def main():
             master_read_nodes.append(node_id)
 
         if len(master_local_path)>1:
-            ciop.log("INFO", "More than one master product found, slice_Assembly on-going " )  
+            ciop.log("INFO", "More than one master product found, slice_Assembly on-going " )
             source_nodes_id = master_read_nodes
             operator = 'SliceAssembly'
             node_id = 'SliceAssembly-M'
@@ -152,7 +152,6 @@ def main():
         ####Read and Assemble Slaves
         for i in range(len(slave_local_path)):
         
-            ciop.log("INFO", "More than one slave product found, slice_Assembly on-going " ) 
             operator = 'Read'
             parameters = get_operator_default_parameters(operator)
             node_id = 'Read-S-{0}'.format(i)
@@ -168,6 +167,7 @@ def main():
 
         if len(slave_local_path)>1:
         
+            ciop.log("INFO", "More than one slave product found, slice_Assembly on-going " )
             source_nodes_id = slave_read_nodes
             operator = 'SliceAssembly'
             node_id = 'SliceAssembly-S'
@@ -192,7 +192,7 @@ def main():
         parameters['subswath'] = input_series_dict['subswath'] 
         parameters['firstBurstIndex'] = '1' 
         parameters['lastBurstIndex'] = '{}'.format(burst_num) 
-        #parameters['wktAoi'] = aoi
+        #parameters['wktAoi'] = ciop.getparam('aoi')
                  
         node_id = 'TOPSAR-Split-M'         
         graph.add_node(node_id,
@@ -343,8 +343,25 @@ def main():
                                               input_series_dict['polarization'],
                                               input_series_dict['master_startdate'][:10],
                                               input_series_dict['slave_enddate'][:10])
+        
+        ####
+        operator = 'Subset'
+        source_node_id = node_id
+        node_id = 'Subset-coherence'
+        
+        parameters = get_operator_default_parameters(operator)
+        parameters['geoRegion'] = ciop.getparam(aoi)
+        parameters['copyMetadata'] = 'true'
+
+
+        mygraph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id)
+        
         ####
         operator = 'Write'
+        source_node_id = node_id
         parameters = get_operator_default_parameters(operator)
                  
         parameters['formatName'] = 'BEAM-DIMAP'      
@@ -355,7 +372,7 @@ def main():
         graph.add_node(node_id,
                          operator,
                          parameters,
-                         'Coherence')
+                         source_node_id)#'Coherence')
 
          
                
