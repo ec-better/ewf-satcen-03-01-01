@@ -88,7 +88,7 @@ def main():
         input_series_dict['master_enddate']  =   max(end_date)
         
         master_ref = [t for t in master_refs if ''.join(''.join(input_series_dict['master_startdate'].split('-')).split(':')).split('Z')[0] in t ]
-        input_series_dict['master_ref'] = os.path.basename(master_ref[0]).split('=')[-1]
+        input_series_dict['master_ref'] = master_ref[0].split('uid=')[1]
         
                  
         start_date = []   
@@ -119,7 +119,7 @@ def main():
         input_series_dict['slave_enddate']  =   max(end_date)
         
         slave_ref = [t for t in slave_refs if ''.join(''.join(input_series_dict['slave_enddate'].split('-')).split(':')).split('Z')[0] in t]
-        input_series_dict['slave_ref'] = os.path.basename(slave_ref[0]).split('=')[-1]
+        input_series_dict['slave_ref'] = slave_ref[0].split('uid=')[1]
         
                  
         ##Create Graph for master/s and slave/s group-pre-processing
@@ -351,8 +351,8 @@ def main():
 #                                              input_series_dict['master_startdate'],#[:10],
 #                                              input_series_dict['slave_enddate'])#[:10])
         
-        output_name = '{}_{}_{}'.format('_'.join(input_series_dict['master_ref'].split('_')[:6],
-                                        '_'.join(input_series_dict['slave_ref'].split('_')[10:16],
+        output_name = '{}_{}_{}'.format('_'.join(input_series_dict['master_ref'].split('_')[:6]),
+                                        '_'.join(input_series_dict['slave_ref'].split('_')[10:16]),
                                         input_series_dict['subswath'])
         
         ####
