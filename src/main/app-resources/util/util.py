@@ -45,12 +45,14 @@ def cog(input_tif, output_tif, band=None):
     if band is not None:
         translate_options = gdal.TranslateOptions(gdal.ParseCommandLine('-co TILED=YES ' \
                                                                         '-co COPY_SRC_OVERVIEWS=YES ' \
+                                                                        '-co BIGTIFF=YES ' \
                                                                         '-co COMPRESS=LZW ' \
                                                                         '-ot Float32 ' \
                                                                         '-b {}'.format(band)))
     else:
         translate_options = gdal.TranslateOptions(gdal.ParseCommandLine('-co TILED=YES ' \
                                                                         '-co COPY_SRC_OVERVIEWS=YES ' \
+                                                                        '-co BIGTIFF=YES ' \
                                                                         '-co COMPRESS=LZW ' \
                                                                         '-ot Float32 ' \
                                                                         '-b 1 -b 2 -b 3'))
@@ -77,7 +79,7 @@ def COG_merge(first, second, third, out_file):
 
     ps = subprocess.Popen(
         ['gdal_merge.py', '-o', out_file,
-         '-of', out_file,
+         #'-of', 'GTiff',
          first, second, third],
         stdout=subprocess.PIPE
     )

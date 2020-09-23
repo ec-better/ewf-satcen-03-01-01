@@ -48,7 +48,7 @@ def main():
     
     os.chdir(ciop.tmp_dir)
     
-    aoi = ciop.getparam('aoi')
+    
     
     for input in sys.stdin:
         #Read dict 
@@ -76,7 +76,7 @@ def main():
             
             
             master_enclosures.append(temp_df[0]['enclosure'])                                 
-            start_date.append(temp_df[0]['startdate'])                                 
+            start_date.append(temp_df[0]['startdate'])                              
             end_date.append(temp_df[0]['enddate'])   
                  
             product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
@@ -85,7 +85,11 @@ def main():
             master_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier']))
         
         input_series_dict['master_startdate']  =  min(start_date)                                                                                               
-        input_series_dict['master_enddate']  =   max(end_date)   
+        input_series_dict['master_enddate']  =   max(end_date)
+        
+        master_ref = [t for t in master_refs if ''.join(''.join(input_series_dict['master_startdate'].split('-')).split(':')).split('Z')[0] in t ]
+        input_series_dict['master_ref'] = master_ref[0].split('uid=')[1]
+        
                  
         start_date = []   
         end_date = []
@@ -94,7 +98,7 @@ def main():
         slave_local_path = []  
                  
         for slv_ref in slave_refs:
-            ciop.log('INFO', 'Getting metadata for {}'.format(slv_ref))                                                                                               
+            ciop.log('INFO', 'Getting metadata for {}'.format(slv_ref))
             temp_df = ciop.search(end_point=slv_ref,
                                 params=[],
                                 output_fields='identifier,enclosure,startdate,wkt,enddate', 
@@ -112,7 +116,10 @@ def main():
             slave_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
                  
         input_series_dict['slave_startdate']  =  min(start_date)                                                                                                    
-        input_series_dict['slave_enddate']  =   max(end_date)  
+        input_series_dict['slave_enddate']  =   max(end_date)
+        
+        slave_ref = [t for t in slave_refs if ''.join(''.join(input_series_dict['slave_enddate'].split('-')).split(':')).split('Z')[0] in t]
+        input_series_dict['slave_ref'] = slave_ref[0].split('uid=')[1]
         
                  
         ##Create Graph for master/s and slave/s group-pre-processing
@@ -137,7 +144,7 @@ def main():
             master_read_nodes.append(node_id)
 
         if len(master_local_path)>1:
-            ciop.log("INFO", "More than one master product found, slice_Assembly on-going " )  
+            ciop.log("INFO", "More than one master product found, slice_Assembly on-going " )
             source_nodes_id = master_read_nodes
             operator = 'SliceAssembly'
             node_id = 'SliceAssembly-M'
@@ -152,7 +159,6 @@ def main():
         ####Read and Assemble Slaves
         for i in range(len(slave_local_path)):
         
-            ciop.log("INFO", "More than one slave product found, slice_Assembly on-going " ) 
             operator = 'Read'
             parameters = get_operator_default_parameters(operator)
             node_id = 'Read-S-{0}'.format(i)
@@ -168,6 +174,7 @@ def main():
 
         if len(slave_local_path)>1:
         
+            ciop.log("INFO", "More than one slave product found, slice_Assembly on-going " )
             source_nodes_id = slave_read_nodes
             operator = 'SliceAssembly'
             node_id = 'SliceAssembly-S'
@@ -192,7 +199,7 @@ def main():
         parameters['subswath'] = input_series_dict['subswath'] 
         parameters['firstBurstIndex'] = '1' 
         parameters['lastBurstIndex'] = '{}'.format(burst_num) 
-        #parameters['wktAoi'] = aoi
+        #parameters['wktAoi'] = ciop.getparam('aoi')
                  
         node_id = 'TOPSAR-Split-M'         
         graph.add_node(node_id,
@@ -339,12 +346,33 @@ def main():
 
         source_node_id_ms = node_id
         ####General output name
-        output_name = 'S1_{}_{}_{}_{}'.format(input_series_dict['subswath'],
-                                              input_series_dict['polarization'],
-                                              input_series_dict['master_startdate'][:10],
-                                              input_series_dict['slave_enddate'][:10])
+#        output_name = 'S1_{}_{}_{}_{}'.format(input_series_dict['subswath'],
+#                                              input_series_dict['polarization'],
+#                                              input_series_dict['master_startdate'],#[:10],
+#                                              input_series_dict['slave_enddate'])#[:10])
+        
+        output_name = '{}_{}_{}'.format('_'.join(input_series_dict['master_ref'].split('_')[:6]),
+                                        '_'.join(input_series_dict['slave_ref'].split('_')[10:16]),
+                                        input_series_dict['subswath'])
+        
+        ####
+        operator = 'Subset'
+        source_node_id = node_id
+        node_id = 'Subset-coherence'
+        
+        parameters = get_operator_default_parameters(operator)
+        parameters['geoRegion'] = ciop.getparam(aoi)
+        parameters['copyMetadata'] = 'true'
+
+
+        mygraph.add_node(node_id,
+                         operator,
+                         parameters,
+                         source_node_id)
+        
         ####
         operator = 'Write'
+        source_node_id = node_id
         parameters = get_operator_default_parameters(operator)
                  
         parameters['formatName'] = 'BEAM-DIMAP'      
@@ -355,7 +383,7 @@ def main():
         graph.add_node(node_id,
                          operator,
                          parameters,
-                         'Coherence')
+                         source_node_id)#'Coherence')
 
          
                
