@@ -361,7 +361,7 @@ def main():
         node_id = 'Subset-coherence'
         
         parameters = get_operator_default_parameters(operator)
-        parameters['geoRegion'] = ciop.getparam(aoi)
+        parameters['geoRegion'] = ciop.getparam('aoi')
         parameters['copyMetadata'] = 'true'
 
 
