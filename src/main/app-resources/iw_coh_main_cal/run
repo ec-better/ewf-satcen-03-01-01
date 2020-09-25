@@ -340,20 +340,20 @@ def main():
                                         '_'.join(input_series_dict['slave_ref_end'].split('_')[:6]),
                                         input_series_dict['subswath'])
         
-        ####
-        operator = 'Subset'
-        source_node_id = node_id
-        node_id = 'Subset-coherence'
-        
-        parameters = get_operator_default_parameters(operator)
-        parameters['geoRegion'] = ciop.getparam('aoi')
-        parameters['copyMetadata'] = 'true'
-
-
-        graph.add_node(node_id,
-                       operator,
-                       parameters,
-                       source_node_id)
+#        ####
+#        operator = 'Subset'
+#        source_node_id = node_id
+#        node_id = 'Subset-coherence'
+#        
+#        parameters = get_operator_default_parameters(operator)
+#        parameters['geoRegion'] = ciop.getparam('aoi')
+#        parameters['copyMetadata'] = 'true'
+#
+#
+#        graph.add_node(node_id,
+#                       operator,
+#                       parameters,
+#                       source_node_id)
         
         ####
         operator = 'Write'
@@ -368,7 +368,7 @@ def main():
         graph.add_node(node_id,
                          operator,
                          parameters,
-                         source_node_id)#'Coherence')
+                         'Coherence')
 
          
                
@@ -384,7 +384,8 @@ def main():
 
         ####                                                                                          
         graph.save_graph('main_graph_{}.xml'.format(output_name))                                                                             
-        ciop.publish(os.path.join(ciop.tmp_dir,'main_graph_{}.xml'.format(output_name)), mode='anonymous')                      
+        ciop.publish(os.path.join(ciop.tmp_dir,'main_graph_{}.xml'.format(output_name)), mode='anonymous')
+        ciop.log('INFO','SNAP Graph: \n{}'.format(graph.view_graph()))
         ####RUN graphs                                                                                                   
         
         graph.run()
@@ -397,6 +398,7 @@ def main():
             if os.path.exists(os.path.join(ciop.tmp_dir,file_name)):
                 tar.add(file_name)
             else:
+                ciop.log('ERROR','Missing output file: {}'.format(file_name))
                 sys.exit(ERR_NO_OUTPUT)               
             
         tar.close()
