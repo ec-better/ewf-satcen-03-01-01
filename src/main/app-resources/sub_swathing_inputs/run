@@ -77,6 +77,8 @@ def main():
         
         input_products = input_products.append(temp_df, ignore_index=True)
         
+        
+        
     #Verify Validity of input products for processing:
     group_analysis(input_products)
     
@@ -94,17 +96,68 @@ def main():
     #....
     #....
     
+    # stage-in to be done once for all data
+    #Stage-IN: to be done once for all data instead of up to 3 times (subswath(s) parallel processing in the next node)
+        
+    #master_local_path = []
+
+    #master_uids = input_products[input_products['ordinal_type'] == 'Pre'].identifier.values
+    mst_start_date = input_products[input_products['ordinal_type'] == 'Pre'].startdate.values
+    #mst_end_date = input_products[input_products['ordinal_type'] == 'Pre'].enddate.values
+    master_enclosure = input_products[input_products['ordinal_type'] == 'Pre'].enclosure.values
+
+    #for mst_enclosure in master_enclosures:
+
+        #master_id = input_products[input_products['enclosure'] == mst_enclosure].identifier.values[0]
+        #ciop.log('INFO', 'Staging-in {}'.format(master_id))
+        #product_path = ciop.copy(mst_enclosure,ciop.tmp_dir)
+        #ciop.log('INFO', 'Staged-in {} into local path: {}'.format(master_id,product_path))
+        #master_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,master_id))
+
+    #ciop.log('DEBUG', 'Masters local paths: {}'.format(master_local_path))
+
+    master_ref_start = input_products[input_products['startdate'] == min(mst_start_date)].identifier.values[0]
+        
+
+    #slave_local_path = []
+
+    #slave_uids = input_products[input_products['ordinal_type'] == 'Pst'].identifier.values
+    slv_end_date = input_products[input_products['ordinal_type'] == 'Pst'].enddate.values
+    slave_enclosure = input_products[input_products['ordinal_type'] == 'Pst'].enclosure.values
+
+#    for slv_enclosure in slave_enclosures:
+#
+#        slave_id = input_products[input_products['enclosure'] == slv_enclosure].identifier.values[0]
+#        ciop.log('INFO', 'Staging-in {}'.format(slave_id))
+#        product_path = ciop.copy(slv_enclosure,ciop.tmp_dir)
+#        ciop.log('INFO', 'Staged-in {} into local path: {}'.format(slave_id,product_path))
+#        slave_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,slave_id))
+#        
+#    ciop.log('DEBUG', 'Slaves local paths: {}'.format(slave_local_path))
+
+    slave_ref_end = input_products[input_products['enddate'] == max(slv_end_date)].identifier.values[0]
+
+    
     for k , pol in itertools.product(sub_swaths , polarizations):
         series = dict()
         series['master_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pre'].self.values)
         series['slave_ref'] = ','.join(input_products[input_products['ordinal_type'] == 'Pst'].self.values)
         series['subswath'] = k
         series['polarization'] = pol
+        series['master_enclosure'] = ','.join(master_enclosure)
+        series['slave_enclosure'] = ','.join(slave_enclosure)
+        series['master_ref_start'] = master_ref_start
+        series['slave_ref_end'] = slave_ref_end
+        
         
         ciop.log('DEBUG','input_series: \{}'.format(series))
         
-        #publish master/slave/subswath/pol and echo to next node 
+        #publish master/slave/subswath/pol/mst and slv local_paths and echo to next node 
         ciop.publish((json.dumps(series) + '\n'), mode="silent")
+        #ciop.publish(os.path.dirname(master_local_path[0]),mode='anonymous')
+        #ciop.publish(os.path.dirname(master_local_path[1]),mode='anonymous')
+        #ciop.publish(os.path.dirname(slave_local_path[0]),mode='anonymous')
+        #ciop.publish(os.path.dirname(slave_local_path[1]),mode='anonymous')
 
 
 try:

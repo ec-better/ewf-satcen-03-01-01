@@ -11,6 +11,7 @@ import string
 import atexit
 import tarfile
 import json 
+
 sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
 
 import cioppy 
@@ -60,67 +61,51 @@ def main():
         slave_refs = list(input_series_dict['slave_ref'].split(','))                                                                   
         #Stage-IN:
 
-        master_enclosures = []
+        master_enclosure = list(input_series_dict['master_enclosure'].split(','))
         master_local_path = [] 
-                 
-        start_date = []   
-        end_date = []
 
-        for mst_ref in master_refs:
-            ciop.log('INFO', 'Getting metadata for {}'.format(mst_ref))                                                                                               
-            temp_df = ciop.search(end_point=mst_ref,
-                                params=[],
-                                output_fields='identifier,enclosure,startdate,wkt,enddate', 
-                                model='EOP',
-                                timeout='60000')
-            
-            
-            master_enclosures.append(temp_df[0]['enclosure'])                                 
-            start_date.append(temp_df[0]['startdate'])                              
-            end_date.append(temp_df[0]['enddate'])   
+
+        for mst_enc in master_enclosure:  
                  
-            product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
+            product_path = ciop.copy(mst_enc,ciop.tmp_dir)
+            input_identifier = os.path.basename(mst_enc)
+            ciop.log("INFO", "Product local path: " + product_path)
             
-            ciop.log("INFO", "Product local path: " + product_path)                                                                                               
-            master_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier']))
+            #--------- this is the way to manage also offline products ---------------------
+            #SAFE_list_0 = glob2.glob('{}/**/*.SAFE/manifest.safe'.format(ciop.tmp_dir))
+            #SAFE_list = [os.path.dirname(x).rstrip('/') for x in SAFE_list_0]
+            #--------------------------------------------------------------
+                    
+            #mst_local_path = os.path.join(SAFE_list[-1],'manifest.safe')
+            mst_local_path = os.path.join('{}/{}.SAFE/manifest.safe'.format(product_path,input_identifier))
+            
+            ciop.log('INFO', 'checking manifest path: {}'.format(os.path.exists(mst_local_path)))
+            assert(os.path.exists(mst_local_path)), sys.exit(ERR_STAGEIN)
+            
+            master_local_path.append(mst_local_path)
         
-        input_series_dict['master_startdate']  =  min(start_date)                                                                                               
-        input_series_dict['master_enddate']  =   max(end_date)
-        
-        master_ref = [t for t in master_refs if ''.join(''.join(input_series_dict['master_startdate'].split('-')).split(':')).split('Z')[0].split('.')[0] in t ]
-        input_series_dict['master_ref_start'] = master_ref[0].split('uid=')[1]
-        
-                 
-        start_date = []   
-        end_date = []
-                 
-        slave_enclosures = []
+
+        slave_enclosure = list(input_series_dict['slave_enclosure'].split(','))         
         slave_local_path = []  
                  
-        for slv_ref in slave_refs:
-            ciop.log('INFO', 'Getting metadata for {}'.format(slv_ref))
-            temp_df = ciop.search(end_point=slv_ref,
-                                params=[],
-                                output_fields='identifier,enclosure,startdate,wkt,enddate', 
-                                model='EOP',
-                                timeout='60000')
-            
-
-            slave_enclosures.append(temp_df[0]['enclosure'])   
-            start_date.append(temp_df[0]['startdate'])                                 
-            end_date.append(temp_df[0]['enddate']) 
+        for slv_enc in slave_enclosure:
                      
-            product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
+            product_path = ciop.copy(slv_enc,ciop.tmp_dir)
+            input_identifier = os.path.basename(slv_enc)
+            ciop.log("INFO", "Product local path: " + product_path)
             
-            ciop.log("INFO", "Product local path: " + product_path)                                                                                               
-            slave_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
-                 
-        input_series_dict['slave_startdate']  =  min(start_date)                                                                                                    
-        input_series_dict['slave_enddate']  =   max(end_date)
-        
-        slave_ref = [t for t in slave_refs if ''.join(''.join(input_series_dict['slave_enddate'].split('-')).split(':')).split('Z')[0].split('.')[0] in t]
-        input_series_dict['slave_ref_end'] = slave_ref[0].split('uid=')[1]
-        
+            #--------- this is the way to manage also offline products ---------------------
+            #SAFE_list_0 = glob2.glob('{}/**/*.SAFE/manifest.safe'.format(ciop.tmp_dir))
+            #SAFE_list = [os.path.dirname(x).rstrip('/') for x in SAFE_list_0]
+            #--------------------------------------------------------------
+                    
+            #slv_local_path = os.path.join(SAFE_list[-1],'manifest.safe')
+            slv_local_path = os.path.join('{}/{}.SAFE/manifest.safe'.format(product_path,input_identifier))
+            
+            ciop.log('INFO', 'checking manifest path: {}'.format(os.path.exists(mst_local_path)))
+            assert(os.path.exists(slv_local_path)), sys.exit(ERR_STAGEIN)
+            slave_local_path.append(slv_local_path)
+                   
                  
         ##Create Graph for master/s and slave/s group-pre-processing
         
@@ -365,10 +350,10 @@ def main():
         parameters['copyMetadata'] = 'true'
 
 
-        mygraph.add_node(node_id,
-                         operator,
-                         parameters,
-                         source_node_id)
+        graph.add_node(node_id,
+                       operator,
+                       parameters,
+                       source_node_id)
         
         ####
         operator = 'Write'
