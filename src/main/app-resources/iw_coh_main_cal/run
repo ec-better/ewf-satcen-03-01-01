@@ -368,7 +368,7 @@ def main():
         graph.add_node(node_id,
                          operator,
                          parameters,
-                         source_node_id)#'Coherence')
+                         'Coherence')
 
          
                
