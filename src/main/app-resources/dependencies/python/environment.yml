@@ -10,10 +10,10 @@ dependencies:
   - backcall=0.1.0=py36_0
   - blas=1.0=mkl
   - bzip2=1.0.8=h7b6447c_0
-  - ca-certificates=2020.1.1=0
+  - ca-certificates=2020.7.22=0
   - ca-certificates-cos6-x86_64=2016.2.10=h4d6d018_0
   - cairo=1.14.12=h8948797_3
-  - certifi=2020.4.5.1=py36_0
+  - certifi=2020.6.20=py36_0
   - cfitsio=3.470=hb7c8383_2
   - cioppy=0.3.7=py36h368a017_0
   - click=7.1.2=py_0
@@ -85,7 +85,7 @@ dependencies:
   - numpy=1.17.0=py36h7e9f1db_0
   - numpy-base=1.17.0=py36hde5b4d6_0
   - openjpeg=2.3.0=h05c96fa_1
-  - openssl=1.1.1g=h7b6447c_0
+  - openssl=1.1.1h=h7b6447c_0
   - p11-kit-cos6-x86_64=0.18.5=he72ed6d_0
   - p11-kit-trust-cos6-x86_64=0.18.5=h140be7e_0
   - packaging=20.3=py_0
