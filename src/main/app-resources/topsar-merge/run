@@ -221,20 +221,21 @@ def main():
 #    if not os.path.exists(local_output_dir):
 #        os.makedirs(local_output_dir)
     
-#    ####
-#    operator = 'Subset'
-#    source_node_id = node_id
-#    node_id = 'Subset'
+    ####
+    operator = 'Subset'
+    source_node_id = node_id
+    node_id = 'Subset'
 
-#    parameters = get_operator_default_parameters(operator)
-#    parameters['geoRegion'] = ciop.getparam('aoi')
-#    parameters['copyMetadata'] = 'true'
+    parameters = get_operator_default_parameters(operator)
+    parameters['geoRegion'] = ciop.getparam('aoi')
+    parameters['copyMetadata'] = 'true'
 
 
-#    graph.add_node(node_id,
-#                   operator,
-#                   parameters,
-#                   source_node_id)
+    graph.add_node(node_id,
+                   operator,
+                   parameters,
+                   source_node_id)
+
 
     ####    
     operator = 'Write'

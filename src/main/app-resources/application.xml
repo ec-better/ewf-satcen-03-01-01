@@ -37,7 +37,6 @@
          <parameter id="cohWinAz" title="Azimuth coherence window size" abstract="Define the coherence estimation azimuth window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">2</parameter>
          <parameter id="cohWinRg" title="Range coherence window size" abstract="Define the coherence estimation range window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">10</parameter>
          <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">SRTM 1Sec HGT</parameter>
-         <parameter id="aoi" title="Area Of Interest" abstract="Define the Area of Interest (processing area)" scope="runtime" maxOccurs="1">POLYGON((149.29 -33.82, 151.35 -33.82, 151.35 -37.87, 149.29 -37.87, 149.29 -33.82))</parameter>
 </defaultParameters>
       <defaultJobconf>
         <property id="mapred.task.timeout">9900000000</property>
@@ -49,6 +48,7 @@
          <parameter id="pixelSpacingInMeter" title="Pixel spacing in meters" abstract="Define the pixel spacing for the Terrain-Correction processing [meters]" scope="runtime" maxOccurs="1">10.0</parameter>
          <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">SRTM 1Sec HGT</parameter>
          <parameter id="mapProjection" title="Map projection" abstract="Define the Map Projection for the Terrain Correction processing" scope="test" maxOccurs="1">EPSG:4326</parameter>
+          <parameter id="aoi" title="Area Of Interest" abstract="Define the Area of Interest (processing area)" scope="runtime" maxOccurs="1">POLYGON((149.29 -33.82, 151.35 -33.82, 151.35 -37.87, 149.29 -37.87, 149.29 -33.82))</parameter>
         </defaultParameters>
       <defaultJobconf>
         <property id="ciop.job.max.tasks">1</property>
