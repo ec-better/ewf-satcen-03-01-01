@@ -11,6 +11,7 @@ import string
 import atexit
 import tarfile
 import json 
+
 sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
 
 import cioppy 
@@ -48,7 +49,7 @@ def main():
     
     os.chdir(ciop.tmp_dir)
     
-    #aoi = ciop.getparam('aoi')
+    
     
     for input in sys.stdin:
         #Read dict 
@@ -60,60 +61,51 @@ def main():
         slave_refs = list(input_series_dict['slave_ref'].split(','))                                                                   
         #Stage-IN:
 
-        master_enclosures = []
+        master_enclosure = list(input_series_dict['master_enclosure'].split(','))
         master_local_path = [] 
-                 
-        start_date = []   
-        end_date = []
 
-        for mst_ref in master_refs:
-            ciop.log('INFO', 'Getting metadata for {}'.format(mst_ref))                                                                                               
-            temp_df = ciop.search(end_point=mst_ref,
-                                params=[],
-                                output_fields='identifier,enclosure,startdate,wkt,enddate', 
-                                model='EOP',
-                                timeout='60000')
-            
-            
-            master_enclosures.append(temp_df[0]['enclosure'])                                 
-            start_date.append(temp_df[0]['startdate'])                                 
-            end_date.append(temp_df[0]['enddate'])   
+
+        for mst_enc in master_enclosure:  
                  
-            product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
+            product_path = ciop.copy(mst_enc,ciop.tmp_dir)
+            input_identifier = os.path.basename(mst_enc)
+            ciop.log("INFO", "Product local path: " + product_path)
             
-            ciop.log("INFO", "Product local path: " + product_path)                                                                                               
-            master_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier']))
+            #--------- this is the way to manage also offline products ---------------------
+            #SAFE_list_0 = glob2.glob('{}/**/*.SAFE/manifest.safe'.format(ciop.tmp_dir))
+            #SAFE_list = [os.path.dirname(x).rstrip('/') for x in SAFE_list_0]
+            #--------------------------------------------------------------
+                    
+            #mst_local_path = os.path.join(SAFE_list[-1],'manifest.safe')
+            mst_local_path = os.path.join('{}/{}.SAFE/manifest.safe'.format(product_path,input_identifier))
+            
+            ciop.log('INFO', 'checking manifest path: {}'.format(os.path.exists(mst_local_path)))
+            assert(os.path.exists(mst_local_path)), sys.exit(ERR_STAGEIN)
+            
+            master_local_path.append(mst_local_path)
         
-        input_series_dict['master_startdate']  =  min(start_date)                                                                                               
-        input_series_dict['master_enddate']  =   max(end_date)   
-                 
-        start_date = []   
-        end_date = []
-                 
-        slave_enclosures = []
+
+        slave_enclosure = list(input_series_dict['slave_enclosure'].split(','))         
         slave_local_path = []  
                  
-        for slv_ref in slave_refs:
-            ciop.log('INFO', 'Getting metadata for {}'.format(slv_ref))                                                                                               
-            temp_df = ciop.search(end_point=slv_ref,
-                                params=[],
-                                output_fields='identifier,enclosure,startdate,wkt,enddate', 
-                                model='EOP',
-                                timeout='60000')
-            
-
-            slave_enclosures.append(temp_df[0]['enclosure'])   
-            start_date.append(temp_df[0]['startdate'])                                 
-            end_date.append(temp_df[0]['enddate']) 
+        for slv_enc in slave_enclosure:
                      
-            product_path = ciop.copy(temp_df[0]['enclosure'],ciop.tmp_dir)
+            product_path = ciop.copy(slv_enc,ciop.tmp_dir)
+            input_identifier = os.path.basename(slv_enc)
+            ciop.log("INFO", "Product local path: " + product_path)
             
-            ciop.log("INFO", "Product local path: " + product_path)                                                                                               
-            slave_local_path.append("{0}/{1}.SAFE/manifest.safe".format(product_path,temp_df[0]['identifier'])) 
-                 
-        input_series_dict['slave_startdate']  =  min(start_date)                                                                                                    
-        input_series_dict['slave_enddate']  =   max(end_date)  
-        
+            #--------- this is the way to manage also offline products ---------------------
+            #SAFE_list_0 = glob2.glob('{}/**/*.SAFE/manifest.safe'.format(ciop.tmp_dir))
+            #SAFE_list = [os.path.dirname(x).rstrip('/') for x in SAFE_list_0]
+            #--------------------------------------------------------------
+                    
+            #slv_local_path = os.path.join(SAFE_list[-1],'manifest.safe')
+            slv_local_path = os.path.join('{}/{}.SAFE/manifest.safe'.format(product_path,input_identifier))
+            
+            ciop.log('INFO', 'checking manifest path: {}'.format(os.path.exists(mst_local_path)))
+            assert(os.path.exists(slv_local_path)), sys.exit(ERR_STAGEIN)
+            slave_local_path.append(slv_local_path)
+                   
                  
         ##Create Graph for master/s and slave/s group-pre-processing
         
@@ -137,7 +129,7 @@ def main():
             master_read_nodes.append(node_id)
 
         if len(master_local_path)>1:
-        
+            ciop.log("INFO", "More than one master product found, slice_Assembly on-going " )
             source_nodes_id = master_read_nodes
             operator = 'SliceAssembly'
             node_id = 'SliceAssembly-M'
@@ -152,7 +144,6 @@ def main():
         ####Read and Assemble Slaves
         for i in range(len(slave_local_path)):
         
-            
             operator = 'Read'
             parameters = get_operator_default_parameters(operator)
             node_id = 'Read-S-{0}'.format(i)
@@ -168,6 +159,7 @@ def main():
 
         if len(slave_local_path)>1:
         
+            ciop.log("INFO", "More than one slave product found, slice_Assembly on-going " )
             source_nodes_id = slave_read_nodes
             operator = 'SliceAssembly'
             node_id = 'SliceAssembly-S'
@@ -178,8 +170,11 @@ def main():
                          parameters,
                          source_nodes_id)
             source_node_id_s = node_id                 
-
-                 
+    
+        ####Count max bursts 
+        burst_slv = 9*len(slave_local_path)
+        burst_mst = 9*len(master_local_path)
+        burst_num = max(burst_slv,burst_mst)
                  
         ####Subswath & Pol split 
         
@@ -188,8 +183,8 @@ def main():
         parameters['selectedPolarisations'] = input_series_dict['polarization']
         parameters['subswath'] = input_series_dict['subswath'] 
         parameters['firstBurstIndex'] = '1' 
-        parameters['lastBurstIndex'] = '9' 
-        #parameters['wktAoi'] = aoi
+        parameters['lastBurstIndex'] = '{}'.format(burst_num) 
+        #parameters['wktAoi'] = ciop.getparam('aoi')
                  
         node_id = 'TOPSAR-Split-M'         
         graph.add_node(node_id,
@@ -336,12 +331,33 @@ def main():
 
         source_node_id_ms = node_id
         ####General output name
-        output_name = 'S1_{}_{}_{}_{}'.format(input_series_dict['subswath'],
-                                                                    input_series_dict['polarization'],
-                                                                    input_series_dict['master_startdate'][:10],
-                                                                    input_series_dict['slave_enddate'][:10])
+#        output_name = 'S1_{}_{}_{}_{}'.format(input_series_dict['subswath'],
+#                                              input_series_dict['polarization'],
+#                                              input_series_dict['master_startdate'],#[:10],
+#                                              input_series_dict['slave_enddate'])#[:10])
+        
+        output_name = '{}_{}_{}'.format('_'.join(input_series_dict['master_ref_start'].split('_')[:6]),
+                                        '_'.join(input_series_dict['slave_ref_end'].split('_')[:6]),
+                                        input_series_dict['subswath'])
+        
+        ####
+        operator = 'Subset'
+        source_node_id = node_id
+        node_id = 'Subset-coherence'
+        
+        parameters = get_operator_default_parameters(operator)
+        parameters['geoRegion'] = ciop.getparam('aoi')
+        parameters['copyMetadata'] = 'true'
+
+
+        graph.add_node(node_id,
+                       operator,
+                       parameters,
+                       source_node_id)
+        
         ####
         operator = 'Write'
+        source_node_id = node_id
         parameters = get_operator_default_parameters(operator)
                  
         parameters['formatName'] = 'BEAM-DIMAP'      
@@ -352,7 +368,7 @@ def main():
         graph.add_node(node_id,
                          operator,
                          parameters,
-                         'Coherence')
+                         source_node_id)#'Coherence')
 
          
                
@@ -378,7 +394,11 @@ def main():
 
         tar = tarfile.open("{}.tar.gz".format(output_name), "w:gz")
         for file_name in [sigma0_output_name,coh_output_name,'{}.data'.format(sigma0_output_name.split('.')[0]),'{}.data'.format(coh_output_name.split('.')[0]) ]:
-            tar.add(file_name)
+            if os.path.exists(os.path.join(ciop.tmp_dir,file_name)):
+                tar.add(file_name)
+            else:
+                sys.exit(ERR_NO_OUTPUT)               
+            
         tar.close()
     
     

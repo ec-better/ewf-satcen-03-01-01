@@ -19,6 +19,7 @@ from snappy import ProductIO
 sys.path.append('/'.join([os.environ['_CIOP_APPLICATION_PATH'], 'util']))
 sys.path.append('../util')
 from py_snap_helpers import *
+from util import *
 sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/snap/.snap/snap-python')    
 # define the exit codes
 SUCCESS = 0
@@ -45,6 +46,7 @@ def main():
     ciop = cioppy.Cioppy()
     
     os.chdir(ciop.tmp_dir)
+    ciop.log('DEBUG', 'ciop path is :{}'.format(ciop.tmp_dir))
     
     #aoi = ciop.getparam('aoi')
     coh_input_splits = []
@@ -60,23 +62,25 @@ def main():
         ciop.log('INFO', 'Processing file {}'.format(input.rstrip()))
         #Only zip data files extracted 
         if input.rstrip().split('.')[-1] == 'gz':
-            ciop.copy(input.rstrip(),ciop.tmp_dir,extract=False)
-            ciop.log('DEBUG','zipped input {} is staged-in'.format(input.rstrip().split('/')[-1]))
-            with tarfile.open(os.path.join(ciop.tmp_dir,input.rstrip().split('/')[-1]), "r:gz") as input_tarfile:
+            ciop.copy(input.rstrip(),input_extract_dir,extract=False)
+            ciop.log('DEBUG','zipped input {} is staged-in'.format(os.path.basename(input.rstrip())))
+            with tarfile.open(os.path.join(input_extract_dir,os.path.basename(input.rstrip())), "r:gz") as input_tarfile:
                 input_tarfile.extractall(path=input_extract_dir)
-        
+            os.remove(os.path.join(input_extract_dir,os.path.basename(input.rstrip())))
         
         
     ## Discriminate input files by name: Choose dim files to be inserted in SNAP graph
     for file in os.listdir(input_extract_dir):
-        if file[-7:-4] == 'coh' and file.split('.')[-1]=='dim':
+        ciop.log('DEBUG', 'Processing file {}'.format(file))
+        #if file[-7:-4] == 'coh' in and file.split('.')[-1]=='dim':
+        if 'coh' in file and '.dim' in file:
             coh_input_splits.append(os.path.join(input_extract_dir,file))
-            ciop.log('DEBUG', 'Processing file {}'.format(file))
-        elif file[-10:-4] == 'sigma0' and file.split('.')[-1]=='dim':
+            
+        #elif file[-10:-4] == 'sigma0' and file.split('.')[-1]=='dim':
+        elif 'sigma0' in file ==  and and '.dim' in file:
             sigma0_input_splits.append(os.path.join(input_extract_dir,file))
-            ciop.log('DEBUG', 'Processing file {}'.format(file))
-
-        
+            output_name = file[:-11]
+            
     ciop.log('INFO', 'Total number of {} sub-swath & Polarisation input slices.'.format(len(coh_input_splits)))
         
     #####Process Inputs
@@ -211,44 +215,163 @@ def main():
                          parameters,
                          source_node_id)
     source_node_id = node_id
+    
     #### Create an output_dir to place the output
 #    local_output_dir = os.path.join(ciop.tmp_dir,'local_output_dir')
 #    if not os.path.exists(local_output_dir):
 #        os.makedirs(local_output_dir)
     
+#    ####
+#    operator = 'Subset'
+#    source_node_id = node_id
+#    node_id = 'Subset'
+
+#    parameters = get_operator_default_parameters(operator)
+#    parameters['geoRegion'] = ciop.getparam('aoi')
+#    parameters['copyMetadata'] = 'true'
+
+
+#    graph.add_node(node_id,
+#                   operator,
+#                   parameters,
+#                   source_node_id)
+
+    ####    
     operator = 'Write'
     parameters = get_operator_default_parameters(operator)
-    parameters['formatName'] = 'BEAM-DIMAP'
-    parameters['file'] = os.path.join(ciop.tmp_dir, 'target.dim')    
+    #parameters['formatName'] = 'BEAM-DIMAP'
+    parameters['formatName'] = 'GeoTIFF-BigTIFF'
+    parameters['file'] = os.path.join(ciop.tmp_dir, 'target.tif')    
     node_id = 'Write'         
     graph.add_node(node_id,
-                         operator, 
-                         parameters,
-                         source_node_id)
-    
-    
+                   operator, 
+                   parameters,
+                   source_node_id)
     
     
     ####Run Graph
     graph.run() 
     
     ciop.log('INFO', 'SNAP Processing finished successfully.')
+
+    
+    ####Gdal post-processing to be added
+
+    ##Sigma0_{master_info}; Sigma0_{slave_info}
+    
+    # Modified master-slave info
+    # Caused error: AttributeError: 'list' object has no attribute 'split'
+    
+    #master_date = sigma0_input_splits[0].split('_')[-2]
+    #slave_date = sigma0_input_splits[0].split('_')[-3]
+    master_date = sigma0_input_splits[0].split('_')[5]
+    slave_date = sigma0_input_splits[0].split('_')[11]
+    
+    master_info = sigma0_input_splits[0].split('_')[:6]
+    slave_info = sigma0_input_splits[0].split('_')[6:12]
+    
+    
+    #Sigma0_master = 'Sigma0_{}.tif'.format(master_date)
+    #Sigma0_slave = 'Sigma0_{}.tif'.format(slave_date)
+    Sigma0_master = 'Sigma0_{}.tif'.format(master_info)
+    Sigma0_slave = 'Sigma0_{}.tif'.format(master_info)
+    
+    # For test publish also raw output data
+    #ciop.publish(os.path.join(ciop.tmp_dir, 'target.tif'), metalink=True)
+    
+    ciop.log('INFO','Creating Sigma0 master COG')
+    cog(os.path.join(ciop.tmp_dir,'target.tif'), os.path.join(ciop.tmp_dir,Sigma0_master), band=1)
+    
+    ciop.log('INFO','Creating Sigma0 slave COG')
+    cog(os.path.join(ciop.tmp_dir,'target.tif'), os.path.join(ciop.tmp_dir,Sigma0_slave), band=2)
+    
+    
+    ##Coherence_{master_info}_{slave_info}
+    #Coh = 'Coherence_{}_{}.tif'.format(master_date, slave_date)
+    Coh = 'Coherence_{}_{}.tif'.format(master_info, slave_info)
+    
+    ciop.log('INFO','Creating Coherence COG')
+    cog(os.path.join(ciop.tmp_dir,'target.tif'),os.path.join(ciop.tmp_dir,Coh), band=3)
+    
+    
+    ##ACD RGB file, name: ACD_{master_date}_{slave_date}, R: Sigma0_{master_info}, G: Sigma0_{slave_info}, B: Sigma0_{slave_info}
+    #master_date = coh_input_splits.split('_')[3]
+    #slave_date = coh_input_splits.split('_')[4]
+    ACD = 'ACD_{}_{}.tif'.format(master_date,slave_date)
+    
+    ciop.log('INFO','Creating ACD COG')
+
+    #COG_merge(Sigma0_master,Sigma0_slave,Sigma0_slave,ACD)
+    
+    
+    ##CCD RGB file, name: CCD_{master_date}_{slave_date},  R: Sigma0_{master_info}, G: Sigma0_{slave_info}, B: Coherence_{master_info}_{slave_info}
+    CCD = 'CCD_{}_{}.tif'.format(master_date,slave_date)
+    
+    ciop.log('INFO','Creating CCD COG')
+    COG_merge(Sigma0_master,Sigma0_slave,Coh,CCD)
+    cog(os.path.join(ciop.tmp_dir,'target.tif'),os.path.join(ciop.tmp_dir,CCD),band=None)
+    
+    
     
     ####Publish Results
-    for suffix in ['dim' , 'data']:
-        out_file = os.path.join(ciop.tmp_dir, 'target.{}'.format(suffix))
-        assert(os.path.exists(out_file)),'out file {} DOES NOT exist'.format(out_file)
-        ciop.publish(out_file, metalink=True)
 
-    ####Gdal post-processing to be added 
-    
-    ##ACD RGB file, name: ACD_{master_date}_{slave_date}
-    
-    
-    ##COG - UInt16
-    
-     
+    for index, output_file in enumerate(['result.ipynb', 
+                                         'stage-in.ipynb',
+                                         Sigma0_master,
+                                         Sigma0_slave,
+                                         Coh,
+                                         ACD,
+                                         CCD]):
+                                            
+        if output_file == 'result.ipynb':
+            title = 'Reproducibility notebook used for generating {0}'.format(output_name)
+            date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                             slave_date)
+        elif output_file == 'stage-in.ipynb':
+            title = 'Reproducibility stage-in notebook for Sentinel-1 data for generating {0}'.format(output_name)
+            date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                                  slave_date)
+        elif output_file == Sigma0_master:
+            title = 'Sigma0 - Backscatter coefficient for master {0}'.format(master_date)
+            date = 'date={0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                                  master_date)
+        elif output_file == Sigma0_slave:
+            title = 'Sigma0 - Backscatter coefficient for slave {0}'.format(slave_date)
+            date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(slave_date,
+                                                             slave_date)
 
+        elif output_file == Coh:
+            title = 'Sentinel1 coherence between master {0} and slave {1}'.format(master_date,
+                                                                                  slave_date)
+            date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                                  slave_date)
+        elif output_file == CCD:
+            title = 'RGB composite of the coherence and backscatter coefficient for master/slave {}/{}'.format(master_date,
+                                                                                                               slave_date)
+            date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                             slave_date)
+        elif output_file == ACD:
+            title = 'RGB composite of the backscatter coefficient for master/slave {}/{}'.format(master_date,
+                                                                                                 slave_date)
+            date = '{0}T00:00:00Z/{1}T23:59:59.99Z\n'.format(master_date,
+                                                             slave_date)
+
+        with open(os.path.join(ciop.tmp_dir, '{}.properties'.format(output_file)) , 'wb') as file:
+            file.write(bytes('title={0}\n'.format(title),encoding = 'utf-8'))
+            file.write(bytes('date={0}\n'.format(date),encoding = 'utf-8'))
+            if (index > 1):
+                #file.write(bytes('geometry={0}'.format(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8')))
+                file.write(bytes('geometry=',encoding = 'utf-8'))
+                file.write(bytes(get_image_wkt(os.path.join(ciop.tmp_dir, output_file)),encoding = 'utf-8'))
+
+
+        #create_metadata(output_tif) #No refrence to function found
+        # Beta Version: result & stage-in removed *format to be controlled*
+
+        ciop.publish(os.path.join(ciop.tmp_dir, output_file), metalink=True)
+        ciop.publish(os.path.join(ciop.tmp_dir, '{}.properties'.format(output_file)), metalink=True)
+        
+        
 
 try:
     main()

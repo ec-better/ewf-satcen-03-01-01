@@ -9,10 +9,10 @@
                  <option>IW1</option>
                  <option>IW2</option>
                  <option>IW3</option>
-                 <option>IW1,IW2</option>
-                 <option>IW2,IW3</option>
-                 <option>IW1,IW2,IW3</option>
-                 <default>IW1</default>
+                 <option>IW1|IW2</option>
+                 <option>IW2|IW3</option>
+                 <option>IW1|IW2|IW3</option>
+                 <default>IW1|IW2|IW3</default>
             </options>
          </parameter>
          <parameter id="polarisation" title="Product polarisation" abstract="Define the product polarisation" scope="runtime" maxOccurs="1">
@@ -37,6 +37,7 @@
          <parameter id="cohWinAz" title="Azimuth coherence window size" abstract="Define the coherence estimation azimuth window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">2</parameter>
          <parameter id="cohWinRg" title="Range coherence window size" abstract="Define the coherence estimation range window size for the Coherence computation [integer number of pixels]" scope="runtime" maxOccurs="1">10</parameter>
          <parameter id="demtype" title="DEM type" abstract="Define the DEM source for the Back-Geocoding Coregistration and Terrain Correction processing. NOTE: SRTM valid in the [-56 deg,+60 deg] range of latitudes." scope="runtime" maxOccurs="1">SRTM 1Sec HGT</parameter>
+         <parameter id="aoi" title="Area Of Interest" abstract="Define the Area of Interest (processing area)" scope="runtime" maxOccurs="1">POLYGON((149.29 -33.82, 151.35 -33.82, 151.35 -37.87, 149.29 -37.87, 149.29 -33.82))</parameter>
 </defaultParameters>
       <defaultJobconf>
         <property id="mapred.task.timeout">9900000000</property>
@@ -60,7 +61,7 @@
     <node id="node_sub_swathing_inputs">
       <job id="sub_swathing_inputs" />
       <sources>
-        <source id="source" title="Sentinel-1 SLC product references" abstract="Define Sentinel-1 SLC product references to be processed with SNAP" scope="runtime" refid="string:list">https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191025T191551_20191025T191618_029619_035F6B_D5E1,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20191106T191551_20191106T191618_029794_03659A_2E33</source> 
+        <source id="source" title="Sentinel-1 SLC product references" abstract="Define Sentinel-1 SLC product references to be processed with SNAP" scope="runtime" refid="string:list">https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20200117T191548_20200117T191615_030844_038A00_E7A8,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20200117T191613_20200117T191640_030844_038A00_75C1,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20200129T191613_20200129T191639_031019_039028_1537,https://catalog.terradue.com/sentinel1/search?uid=S1A_IW_SLC__1SDV_20200129T191548_20200129T191615_031019_039028_605A</source> 
       </sources>
       <parameters/>
     </node>
