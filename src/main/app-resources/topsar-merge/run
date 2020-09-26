@@ -77,7 +77,7 @@ def main():
             coh_input_splits.append(os.path.join(input_extract_dir,file))
             
         #elif file[-10:-4] == 'sigma0' and file.split('.')[-1]=='dim':
-        elif 'sigma0' in file ==  and and '.dim' in file:
+        elif 'sigma0' in file and '.dim' in file:
             sigma0_input_splits.append(os.path.join(input_extract_dir,file))
             output_name = file[:-11]
             
