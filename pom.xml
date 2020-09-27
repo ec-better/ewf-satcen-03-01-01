@@ -11,7 +11,7 @@
     <version>1.0-docker</version>
   </parent>
   <description>This is a short description</description>
-  <version>0.28</version>
+  <version>0.29</version>
   <properties>
     <summary>Change Detection and Characterization</summary>
     <description>This is a short description</description>

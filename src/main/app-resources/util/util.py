@@ -7,6 +7,9 @@ import osr
 import ogr
 import subprocess
 from shapely.geometry import box
+import sys
+
+sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/bin')
 
 ciop = cioppy.Cioppy()
 
