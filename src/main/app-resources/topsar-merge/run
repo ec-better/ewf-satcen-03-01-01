@@ -223,20 +223,21 @@ def main():
 
 #----------------------------------------------------------------
 #    ####
-#    operator = 'Subset'
-#    source_node_id = node_id
-#    node_id = 'Subset'
-#
-#    parameters = get_operator_default_parameters(operator)
-#    parameters['geoRegion'] = ciop.getparam('aoi')
-#    parameters['copyMetadata'] = 'true'
-#
-#
-#    graph.add_node(node_id,
-#                   operator,
-#                   parameters,
-#                   source_node_id)
-#    source_node_id = node_id
+    operator = 'Subset'
+    source_node_id = node_id
+    node_id = 'Subset'
+
+    parameters = get_operator_default_parameters(operator)
+    parameters['geoRegion'] = ciop.getparam('aoi')
+    parameters['copyMetadata'] = 'true'
+
+
+    graph.add_node(node_id,
+                   operator,
+                   parameters,
+                   source_node_id)
+    
+    source_node_id = node_id
 
 
     ####    
