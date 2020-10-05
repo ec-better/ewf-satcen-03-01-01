@@ -340,20 +340,19 @@ def main():
                                         '_'.join(input_series_dict['slave_ref_end'].split('_')[:6]),
                                         input_series_dict['subswath'])
         
-        ####
-        operator = 'Subset'
-        source_node_id = node_id
-        node_id = 'Subset-coherence'
-        
-        parameters = get_operator_default_parameters(operator)
-        parameters['geoRegion'] = ciop.getparam('aoi')
-        parameters['copyMetadata'] = 'true'
-
-
-        graph.add_node(node_id,
-                       operator,
-                       parameters,
-                       source_node_id)
+#        ####
+#        operator = 'Subset'
+#        source_node_id = node_id
+#        node_id = 'Subset-coherence'
+#        
+#        parameters = get_operator_default_parameters(operator)
+#        parameters['geoRegion'] = ciop.getparam('aoi')
+#        parameters['copyMetadata'] = 'true'
+#
+#        graph.add_node(node_id,
+#                       operator,
+#                       parameters,
+#                       source_node_id)
         
         ####
         operator = 'Write'
