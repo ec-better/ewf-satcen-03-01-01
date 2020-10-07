@@ -331,28 +331,9 @@ def main():
 
         source_node_id_ms = node_id
         ####General output name
-#        output_name = 'S1_{}_{}_{}_{}'.format(input_series_dict['subswath'],
-#                                              input_series_dict['polarization'],
-#                                              input_series_dict['master_startdate'],#[:10],
-#                                              input_series_dict['slave_enddate'])#[:10])
-        
         output_name = '{}_{}_{}'.format('_'.join(input_series_dict['master_ref_start'].split('_')[:6]),
                                         '_'.join(input_series_dict['slave_ref_end'].split('_')[:6]),
                                         input_series_dict['subswath'])
-        
-#        ####
-#        operator = 'Subset'
-#        source_node_id = node_id
-#        node_id = 'Subset-coherence'
-#        
-#        parameters = get_operator_default_parameters(operator)
-#        parameters['geoRegion'] = ciop.getparam('aoi')
-#        parameters['copyMetadata'] = 'true'
-#
-#        graph.add_node(node_id,
-#                       operator,
-#                       parameters,
-#                       source_node_id)
         
         ####
         operator = 'Write'
