@@ -7,7 +7,9 @@ import osr
 import ogr
 import subprocess
 from shapely.geometry import box
-import sys
+import sys,os
+
+gdal.UseExceptions()
 
 sys.path.append('/opt/anaconda/envs/env_ewf_satcen_03_01_01/bin')
 
@@ -46,6 +48,7 @@ def group_analysis(df):
 def cog(input_tif, output_tif, band=None):
     
     if band is not None:
+        
         translate_options = gdal.TranslateOptions(gdal.ParseCommandLine('-co TILED=YES ' \
                                                                         '-co COPY_SRC_OVERVIEWS=YES ' \
                                                                         '-co BIGTIFF=YES ' \
@@ -61,34 +64,50 @@ def cog(input_tif, output_tif, band=None):
                                                                         '-b 1 -b 2 -b 3'))
 
     ds = gdal.Open(input_tif, gdal.OF_READONLY)
-
+    
     gdal.SetConfigOption('COMPRESS_OVERVIEW', 'DEFLATE')
     ds.BuildOverviews('NEAREST', [2,4,8,16,32])
     
     ds = None
 
     ds = gdal.Open(input_tif)
+
     gdal.Translate(output_tif,
                    ds, 
                    options=translate_options)
-    ds = None
 
-    #os.remove('{}.ovr'.format(input_tif))
+    ds = None
+    if (os.path.exists(output_tif)):
+        ciop.log('INFO','COG {} created'.format(output_tif))
+    else:
+        ciop.log('ERROR','COG {} NOT created'.format(output_tif))
+       
+    try:
+        os.remove('{}.ovr'.format(input_tif))
+    except:
+        pass
+        
     #os.remove(input_tif)
                                                   
 
 
 def COG_merge(first, second, third, out_file):
 
-    ps = subprocess.Popen(
-        ['gdal_merge.py', '-o', out_file,
-         #'-of', 'GTiff',
-         first, second, third],
-        stdout=subprocess.PIPE
-    )
+    ps = subprocess.Popen(['gdal_merge.py','-o', out_file, first, second, third],
+                           stdout=subprocess.PIPE)
+    
     output = ps.communicate()[0]
+    
     for line in output.splitlines():
         ciop.log('INFO',line)
+    
+    
+    if (os.path.exists(out_file)):
+        ciop.log('INFO','MERGED COG {} created'.format(out_file))
+    else:
+        ciop.log('ERROR','MERGED COG {} NOT created'.format(out_file))
+
+
                                                   
 # Modified the function to accept the img either if does NOT have Projection
 def get_image_wkt(product):
