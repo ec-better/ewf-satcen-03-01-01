@@ -263,8 +263,8 @@ def main():
     
     ####Gdal post-processing to be added
 
-    master_info = '_'.join(sigma0_input_splits[0].split('_')[:6])
-    slave_info = '_'.join(sigma0_input_splits[0].split('_')[6:12])
+    master_info = '_'.join(os.path.basename(sigma0_input_splits[0]).split('_')[:6])
+    slave_info = '_'.join(os.path.basename(sigma0_input_splits[0]).split('_')[6:12])
     
     Sigma0_master = 'Sigma0_{}.tif'.format(master_info)
     Sigma0_slave = 'Sigma0_{}.tif'.format(slave_info)
