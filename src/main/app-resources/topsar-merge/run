@@ -265,11 +265,23 @@ def main():
 
     master_info = '_'.join(os.path.basename(sigma0_input_splits[0]).split('_')[:6])
     slave_info = '_'.join(os.path.basename(sigma0_input_splits[0]).split('_')[6:12])
+
     
+    master_date = sigma0_input_splits[0].split('_')[5]
+    slave_date = sigma0_input_splits[0].split('_')[11]
+    
+    date_m = master_date.split('T')[0]
+    time_m = master_date.split('T')[1]
+
+    master_date = '{}-{}-{}T{}:{}:{}Z'.format(date_m[:4],date_m[4:6],date_m[6:8],time_m[:2],time_m[2:4],time_m[4:])
+    date_s= slave_date.split('T')[0]
+    time_s = slave_date.split('T')[1]
+    slave_date = '{}-{}-{}T{}:{}:{}Z'.format(date_s[:4],date_s[4:6],date_s[6:8],time_s[:2],time_s[2:4],time_s[4:])
+    
+    ##Sigma0_{master_info}; Sigma0_{slave_info}
     Sigma0_master = 'Sigma0_{}.tif'.format(master_info)
     Sigma0_slave = 'Sigma0_{}.tif'.format(slave_info)
     
-    ##Sigma0_{master_info}; Sigma0_{slave_info}
     ciop.log('INFO','Creating Sigma0 master COG')
     cog(os.path.join(ciop.tmp_dir,'target.tif'), os.path.join(ciop.tmp_dir,Sigma0_master), band=1)
     ciop.log('INFO','Creating Sigma0 slave COG')
@@ -292,18 +304,6 @@ def main():
     CCD = 'CCD_{}_{}.tif'.format(master_date,slave_date)
     ciop.log('INFO','Creating CCD COG')
     COG_merge(os.path.join(ciop.tmp_dir,Sigma0_master),os.path.join(ciop.tmp_dir,Sigma0_slave),os.path.join(ciop.tmp_dir,Coh),os.path.join(ciop.tmp_dir,CCD))
-    
-    master_date = sigma0_input_splits[0].split('_')[5]
-    slave_date = sigma0_input_splits[0].split('_')[11]
-    
-    date_m = master_date.split('T')[0]
-    time_m = master_date.split('T')[1]
-
-    master_date = '{}-{}-{}T{}:{}:{}Z'.format(date_m[:4],date_m[4:6],date_m[6:8],time_m[:2],time_m[2:4],time_m[4:])
-    date_s= slave_date.split('T')[0]
-    time_s = slave_date.split('T')[1]
-    slave_date = '{}-{}-{}T{}:{}:{}Z'.format(date_s[:4],date_s[4:6],date_s[6:8],time_s[:2],time_s[2:4],time_s[4:])
-    
     
     
     ####Publish Results
