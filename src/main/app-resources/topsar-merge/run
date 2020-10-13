@@ -267,16 +267,8 @@ def main():
     slave_info = '_'.join(os.path.basename(sigma0_input_splits[0]).split('_')[6:12])
 
     
-    master_date = sigma0_input_splits[0].split('_')[5]
-    slave_date = sigma0_input_splits[0].split('_')[11]
-    
-    date_m = master_date.split('T')[0]
-    time_m = master_date.split('T')[1]
-
-    master_date = '{}-{}-{}T{}:{}:{}Z'.format(date_m[:4],date_m[4:6],date_m[6:8],time_m[:2],time_m[2:4],time_m[4:])
-    date_s= slave_date.split('T')[0]
-    time_s = slave_date.split('T')[1]
-    slave_date = '{}-{}-{}T{}:{}:{}Z'.format(date_s[:4],date_s[4:6],date_s[6:8],time_s[:2],time_s[2:4],time_s[4:])
+    master_date = os.path.basename(sigma0_input_splits[0]).split('_')[5]
+    slave_date = os.path.basename(sigma0_input_splits[0]).split('_')[11]
     
     ##Sigma0_{master_info}; Sigma0_{slave_info}
     Sigma0_master = 'Sigma0_{}.tif'.format(master_info)
@@ -306,8 +298,16 @@ def main():
     COG_merge(os.path.join(ciop.tmp_dir,Sigma0_master),os.path.join(ciop.tmp_dir,Sigma0_slave),os.path.join(ciop.tmp_dir,Coh),os.path.join(ciop.tmp_dir,CCD))
     
     
-    ####Publish Results
+    #### master/slave date conversion in ISO format
+    date_m = master_date.split('T')[0]
+    time_m = master_date.split('T')[1]
 
+    master_date = '{}-{}-{}T{}:{}:{}Z'.format(date_m[:4],date_m[4:6],date_m[6:8],time_m[:2],time_m[2:4],time_m[4:])
+    date_s= slave_date.split('T')[0]
+    time_s = slave_date.split('T')[1]
+    slave_date = '{}-{}-{}T{}:{}:{}Z'.format(date_s[:4],date_s[4:6],date_s[6:8],time_s[:2],time_s[2:4],time_s[4:])
+
+    ####Publish Results
     for index, output_file in enumerate(['result.ipynb', 
                                          'stage-in.ipynb',
                                           Sigma0_master,
@@ -325,28 +325,28 @@ def main():
             date = '{0}/{1}'.format(master_date,
                                     slave_date)
         elif output_file == Sigma0_master:
-            title = 'Sigma0 - Backscatter coefficient for master {0}'.format(master_date)
+            title = 'Sigma0 - Backscatter coefficient for master {0}'.format(master_info)
             date = 'date={0}/{1}'.format(master_date,
                                          master_date)
         elif output_file == Sigma0_slave:
-            title = 'Sigma0 - Backscatter coefficient for slave {0}'.format(slave_date)
+            title = 'Sigma0 - Backscatter coefficient for slave {0}'.format(slave_info)
             date = '{0}/'.format(slave_date,
                                  slave_date)
 
         elif output_file == Coh:
-            title = 'Sentinel1 coherence between master {0} and slave {1}'.format(master_date,
-                                                                                  slave_date)
-            date = '{0}/{1}T'.format(master_date,
+            title = 'Sentinel1 coherence between master {0} and slave {1}'.format(master_info,
+                                                                                  slave_info)
+            date = '{0}/{1}'.format(master_date,
                                      slave_date)
         elif output_file == CCD:
-            title = 'RGB composite of the coherence and backscatter coefficient for master/slave {}/{}'.format(master_date,
-                                                                                                               slave_date)
-            date = '{0}/{1}'.format(master_date,
+            title = 'RGB composite of the coherence and backscatter coefficient for master/slave {}/{}'.format(master_info,
+                                                                                                               slave_info)
+            date = '{0}/{1}'.format(master_info,
                                     slave_date)
         elif output_file == ACD:
-            title = 'RGB composite of the backscatter coefficient for master/slave {}/{}'.format(master_date,
-                                                                                                 slave_date)
-            date = '{0}/{1}'.format(master_date,
+            title = 'RGB composite of the backscatter coefficient for master/slave {}/{}'.format(master_info,
+                                                                                                 slave_info)
+            date = '{0}/{1}'.format(master_info,
                                     slave_date)
 
         with open(os.path.join(ciop.tmp_dir, '{}.properties'.format(output_file)) , 'wb') as file:
