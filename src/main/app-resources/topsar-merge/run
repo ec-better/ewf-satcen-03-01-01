@@ -308,23 +308,13 @@ def main():
     slave_date = '{}-{}-{}T{}:{}:{}Z'.format(date_s[:4],date_s[4:6],date_s[6:8],time_s[:2],time_s[2:4],time_s[4:])
 
     ####Publish Results
-    for index, output_file in enumerate(['result.ipynb', 
-                                         'stage-in.ipynb',
-                                          Sigma0_master,
+    for index, output_file in enumerate([ Sigma0_master,
                                           Sigma0_slave,
                                           Coh,
                                           ACD,
                                           CCD]):
                                             
-        if output_file == 'result.ipynb':
-            title = 'Reproducibility notebook used for generating {0}'.format(output_name)
-            date = '{0}/{1}'.format(master_date,
-                                    slave_date)
-        elif output_file == 'stage-in.ipynb':
-            title = 'Reproducibility stage-in notebook for Sentinel-1 data for generating {0}'.format(output_name)
-            date = '{0}/{1}'.format(master_date,
-                                    slave_date)
-        elif output_file == Sigma0_master:
+        if output_file == Sigma0_master:
             title = 'Sigma0 - Backscatter coefficient for master {0}'.format(master_info)
             date = 'date={0}/{1}'.format(master_date,
                                          master_date)
