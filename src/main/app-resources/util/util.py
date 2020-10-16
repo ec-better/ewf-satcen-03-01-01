@@ -93,7 +93,7 @@ def cog(input_tif, output_tif, band=None):
 
 def COG_merge(first, second, third, out_file):
 
-    ps = subprocess.Popen(['/opt/anaconda/envs/env_ewf_satcen_03_01_01/bin/gdal_merge.py','-o', out_file, first, second, third],
+    ps = subprocess.Popen(['/opt/anaconda/envs/env_ewf_satcen_03_01_01/bin/gdal_merge.py','-separate','-o', out_file, first, second, third],
                            stdout=subprocess.PIPE)
     
     output = ps.communicate()[0]
