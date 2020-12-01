@@ -54,9 +54,9 @@ def main():
     
     #aoi = ciop.getparam('aoi')
 
-    polarizations = ciop.getparam('polarisation').split(',')
+    polarizations = ciop.getparam('polarisation')#.split(',')
     #sub_swaths = ciop.getparam('subswath').split(';')
-    sub_swaths = ciop.getparam('subswath').split('|') 
+    sub_swaths = ciop.getparam('subswath').split('+') 
     references = []
         
     for input in sys.stdin:
